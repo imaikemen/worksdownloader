@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="./README.md">English</a> | <b>简体中文</b>
+  <b>English</b> | <a href="./README_CN.md">简体中文</a>
 </p>
 
 # worksdownloader V1.0.1
