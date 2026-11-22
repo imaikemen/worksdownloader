@@ -1,0 +1,3069 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>作品鉴赏downloader V1.0.1</title>
+<style>
+  :root{
+    --bg:#f6f8fb; --panel:#ffffff; --text:#1f2937; --muted:#64748b;
+    --line:#e5e7eb; --accent:#ef4444; --accent-d:#dc2626;
+    --tint:#fef2f2; --card:#ffffff; --shadow:0 2px 6px rgba(15,23,42,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    user-select:text;
+    font-family:-apple-system,"Segoe UI","Helvetica Neue","PingFang SC","Microsoft Yahei",sans-serif;
+    font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent)}
+  button{font:inherit}
+  .copy-menu{position:fixed;z-index:1100;box-shadow:0 4px 16px #0f172a28;white-space:nowrap}
+  .container{max-width:1200px;margin:0 auto;padding:24px 20px 80px}
+
+  /* ===== 顶部 ===== */
+  header.app{background:linear-gradient(135deg,#ef4444 0%,#f87171 100%);
+    color:#fff;padding:18px 22px;display:flex;align-items:center;gap:12px;
+    box-shadow:0 2px 10px rgba(239,68,68,.18);}
+  header.app h1{font-size:18px;margin:0;font-weight:600;letter-spacing:.5px}
+  header.app .badge{background:rgba(255,255,255,.22);padding:3px 10px;border-radius:999px;
+    font-size:11px;font-weight:500;letter-spacing:.5px}
+
+  /* ===== 顶部免责声明条 & 启动免责声明弹窗 ===== */
+  .disclaimer-banner{background:#fffbeb;border-bottom:1px solid #fde68a;color:#92400e;
+    padding:9px 22px;font-size:12.5px;line-height:1.55;display:flex;align-items:flex-start;gap:8px}
+  .disclaimer-banner strong{color:#b45309;white-space:nowrap}
+  .disclaimer-dialog{width:min(580px,calc(100% - 28px));padding:22px 24px;border-radius:16px}
+  .disclaimer-dialog::backdrop{background:rgba(15,23,42,.62);backdrop-filter:blur(3px)}
+  .disclaimer-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+  .disclaimer-head h2{margin:0;font-size:17px;color:var(--text);display:flex;align-items:center;gap:8px}
+  .disclaimer-countdown{flex:0 0 auto;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;
+    background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-variant-numeric:tabular-nums}
+  .disclaimer-countdown.ready{background:#ecfdf5;color:#059669;border-color:#a7f3d0}
+  .disclaimer-body{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 16px;
+    font-size:13px;line-height:1.7;color:#78350f;margin-bottom:16px}
+  .disclaimer-body ol{margin:0;padding-left:18px}
+  .disclaimer-body li{margin-bottom:6px}
+  .disclaimer-body li:last-child{margin-bottom:0}
+  .disclaimer-options{display:flex;flex-direction:column;gap:9px;margin-bottom:16px}
+  .disclaimer-option{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid var(--line);
+    border-radius:10px;background:#fff;cursor:pointer;font-size:13.5px;font-weight:500;color:var(--text);
+    transition:border-color .15s,background-color .15s,opacity .15s}
+  .disclaimer-option:hover:not(.is-locked){border-color:#fca5a5;background:#fffafa}
+  .disclaimer-option:has(input:checked){border-color:var(--accent);background:#fef2f2;color:#991b1b}
+  .disclaimer-option input[type="radio"]{width:16px;height:16px;margin:0;accent-color:var(--accent);flex:0 0 auto}
+  .disclaimer-option.is-locked{opacity:.55;cursor:not-allowed;background:#f8fafc;user-select:none}
+  .disclaimer-option.is-locked input[type="radio"]{cursor:not-allowed}
+  .disclaimer-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .disclaimer-hint{font-size:12px;color:var(--muted)}
+  #btn-disclaimer-confirm{min-width:116px}
+
+  /* ===== 卡片面板 ===== */
+  .panel{background:var(--panel);border-radius:14px;box-shadow:var(--shadow);
+    padding:20px 22px;margin-bottom:18px;border:1px solid var(--line)}
+  .panel h2{font-size:15px;margin:0 0 14px;font-weight:600;color:var(--text);
+    display:flex;align-items:center;gap:8px}
+  .panel h2::before{content:"";width:3px;height:14px;background:var(--accent);border-radius:2px}
+  .panel .desc{color:var(--muted);font-size:12px;margin-top:10px;margin-bottom:14px}
+
+  .favorites{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+  .favorites-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .favorites-head-left{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .favorites-head-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
+  .favorites-head h3{margin:0;font-size:14px;font-weight:600;color:var(--text)}
+  .search-box{position:relative;display:inline-flex;align-items:center}
+  .search-box input[type="text"]{height:32px;padding:0 28px 0 32px;font-size:12.5px;border:1px solid #d1d5db;border-radius:8px;
+    background:#fff;color:var(--text);width:230px;outline:none;transition:border-color .15s,box-shadow .15s}
+  .search-box input[type="text"]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(239,68,68,.12)}
+  .search-box .search-ico{position:absolute;left:9px;color:#94a3b8;pointer-events:none;display:inline-flex;align-items:center}
+  .search-box .search-clear{position:absolute;right:5px;width:20px;height:20px;border:none;background:transparent;
+    color:#94a3b8;cursor:pointer;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:14px;padding:0}
+  .search-box .search-clear:hover{background:#f1f5f9;color:var(--text)}
+  .search-box .search-clear[hidden]{display:none}
+  .search-dropdown{position:absolute;top:calc(100% + 5px);left:0;right:0;min-width:280px;max-height:280px;overflow-y:auto;
+    background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 10px 28px rgba(15,23,42,.14);
+    z-index:950;padding:4px}
+  .search-dropdown[hidden]{display:none}
+  .search-option{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:7px 9px;border:none;
+    background:transparent;border-radius:7px;cursor:pointer;color:var(--text);font-size:12.5px;transition:background .12s}
+  .search-option:hover,.search-option.active{background:#fef2f2}
+  .search-option-main{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px}
+  .search-option-title{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .search-option-sub{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .search-option-rank{flex:0 0 auto;font-size:11px;color:#94a3b8;font-variant-numeric:tabular-nums}
+  .search-empty{padding:10px 12px;font-size:12px;color:var(--muted);text-align:center}
+  .favorite-card.search-hit{animation:favorite-hit-pulse 0.7s ease-in-out 2}
+  @keyframes favorite-hit-pulse{
+    0%,100%{border-color:#e5e7eb;box-shadow:none}
+    50%{border-color:#eab308;box-shadow:0 0 0 4px rgba(250,204,21,.45)}
+  }
+  .panel-select-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .panel-select-head h2{margin:0}
+  .work-search-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
+  .work-search-tools .search-box input[type="text"]{width:240px}
+  .work-search-tools .search-dropdown{right:0;left:auto;min-width:320px}
+  .date-picker-wrap{position:relative;display:inline-flex;align-items:center}
+  .work-date-btn{height:32px;padding:0 12px !important;font-size:12.5px !important;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+  .work-date-btn.active{border-color:var(--accent);color:var(--accent);background:var(--tint)}
+  .date-popover{position:absolute;top:calc(100% + 6px);right:0;width:308px;background:#fff;border:1px solid #e2e8f0;
+    border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.16);z-index:960;padding:12px}
+  .date-popover[hidden]{display:none}
+  .date-popover-row{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+  .date-popover-row select{height:30px;padding:0 8px;font-size:12px;flex:1;min-width:0}
+  .date-popover-row button{height:30px;padding:0 9px;font-size:11.5px;white-space:nowrap;flex:0 0 auto}
+  .date-cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px;text-align:center;
+    font-size:11px;color:#94a3b8;font-weight:500}
+  .date-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+  .date-cal-day{position:relative;height:32px;border:1px solid transparent;border-radius:7px;background:transparent;
+    font-size:12px;color:#cbd5e1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    cursor:default;padding:0;line-height:1}
+  .date-cal-day.has-works{color:var(--text);background:#fff7ed;border-color:#fed7aa;font-weight:600;cursor:pointer}
+  .date-cal-day.has-works:hover{background:#fef2f2;border-color:var(--accent);color:var(--accent)}
+  .date-cal-day.has-works::after{content:"";width:4px;height:4px;border-radius:50%;background:var(--accent);margin-top:2px}
+  .date-cal-day.selected{background:var(--accent);border-color:var(--accent);color:#fff}
+  .date-cal-day.selected::after{background:#fff}
+  .date-popover-foot{margin-top:8px;padding-top:8px;border-top:1px solid var(--line);display:flex;
+    align-items:center;justify-content:space-between;font-size:11.5px;color:var(--muted)}
+  .card.flash-yellow{animation:work-flash-yellow 0.65s ease-in-out 2}
+  @keyframes work-flash-yellow{
+    0%,100%{border-color:transparent;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+    50%{border-color:#eab308;box-shadow:0 0 0 5px rgba(250,204,21,.58),0 0 22px rgba(234,179,8,.68)}
+  }
+  .favorites-count{font-size:12px;color:var(--muted);background:#f1f5f9;border-radius:999px;padding:1px 8px}
+  .favorites-pin-count{font-size:11.5px;color:#b45309;background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;padding:1px 8px}
+  .favorites-tip{font-size:11.5px;color:#94a3b8}
+  .favorites-list{display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto;overscroll-behavior:contain;
+    padding:10px;border:1px solid var(--line);border-radius:12px;background:#f8fafc;
+    scrollbar-width:thin;scrollbar-color:#cbd5e1 transparent}
+  .favorites-list:empty{display:none}
+  .favorites-list.is-dragging{user-select:none;-webkit-user-select:none}
+  .favorites-list::-webkit-scrollbar{width:6px}
+  .favorites-list::-webkit-scrollbar-track{background:transparent}
+  .favorites-list::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}
+  .favorites-list::-webkit-scrollbar-thumb:hover{background:#94a3b8}
+  .favorite-card{position:relative;min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;
+    transition:border-color .15s ease,box-shadow .15s ease,background-color .15s ease}
+  .favorite-card:hover{border-color:#fca5a5;box-shadow:0 2px 8px rgba(15,23,42,.06)}
+  .favorite-card.is-pinned{border-color:#fed7aa;background:linear-gradient(90deg,#fffbf5 0%,#ffffff 18%)}
+  .favorite-card.is-pinned:hover{border-color:#fb923c}
+  .favorite-card.has-update{border-left:3px solid #dc2626;background:linear-gradient(90deg,#fff5f5 0%,#ffffff 24%)}
+  .favorite-card.dragging{position:fixed;z-index:1200;margin:0;pointer-events:none;
+    border-color:#ef4444;background:#fff;box-shadow:0 12px 28px rgba(15,23,42,.18);
+    transform:scale(1.01);opacity:.97;transition:none}
+  .favorite-drop-placeholder{border:1.5px dashed #fca5a5;border-radius:10px;background:#fff5f5;flex:0 0 auto;pointer-events:none}
+  .favorite-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .favorite-drag-handle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 18px;width:18px;height:30px;
+    color:#cbd5e1;cursor:grab;border-radius:6px;touch-action:none;transition:color .15s,background-color .15s}
+  .favorite-drag-handle:hover{color:#64748b;background:#f1f5f9}
+  .favorite-card.dragging .favorite-drag-handle{cursor:grabbing;color:#ef4444}
+  .favorite-avatar{position:relative;display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;
+    border-radius:50%;background:#fce7e7;color:#9f1239;font-size:16px;font-weight:600;border:1px solid #fee2e2;overflow:hidden}
+  .favorite-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit}
+  .favorite-main{min-width:0;flex:1 1 250px;display:flex;flex-direction:column;gap:4px}
+  .favorite-title-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+  .favorite-platform{flex:0 0 auto;font-size:11px;font-weight:600;line-height:1.4;padding:1px 7px;border-radius:6px;
+    background:#f1f5f9;color:#475569;border:1px solid #e2e8f0}
+  .favorite-platform.douyin{background:#f8fafc;color:#0f172a;border-color:#cbd5e1}
+  .favorite-platform.xiaohongshu{background:#fff1f2;color:#be123c;border-color:#fecdd3}
+  .favorite-platform.weibo{background:#fff7ed;color:#c2410c;border-color:#fed7aa}
+  .first-path-box{background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+    font-size:13px;color:var(--text);margin-bottom:16px;word-break:break-all}
+  .first-path-box code{display:block;margin-top:6px;padding:7px 10px;border-radius:8px;
+    background:#fff;border:1px solid #e2e8f0;font-size:12.5px;color:#0f172a}
+  .first-path-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+  .favorite-name{font-weight:650;font-size:14px;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:250px}
+  .favorite-update{display:inline-flex;align-items:center;gap:5px;flex:0 0 auto;max-width:100%;
+    border-radius:999px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;
+    padding:2px 9px;font-size:11px;font-weight:600;line-height:1.4;white-space:nowrap}
+  .favorite-update::before{content:"";width:6px;height:6px;border-radius:50%;background:#ef4444;flex:0 0 6px}
+  .favorite-ids{display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap;font-size:12px;color:var(--muted);line-height:1.45}
+  .favorite-account,.favorite-id{display:inline-flex;align-items:center;gap:4px;min-width:0;max-width:100%}
+  .favorite-id-value{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11.5px;color:#475569;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+  .favorite-empty,.favorite-check-error{font-size:12px;color:var(--muted)}
+  .favorite-note-row{display:flex;align-items:center;gap:6px;flex:0 1 220px;min-width:160px}
+  .favorite-note{width:100%;min-width:0;height:30px;padding:4px 9px;font-size:12px;color:var(--text);
+    background:#fff;border:1px solid var(--line);border-radius:8px;outline:none;transition:border-color .15s,box-shadow .15s}
+  .favorite-note:focus{border-color:#fca5a5;box-shadow:0 0 0 3px rgba(239,68,68,.12)}
+  .favorite-note-save{flex:none;height:30px;padding:0 10px}
+  .favorite-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto;flex-wrap:wrap}
+  .favorite-pin-btn{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0 !important;
+    color:#94a3b8;border-color:#e2e8f0;transition:all .15s ease}
+  .favorite-pin-btn:hover{color:#dc2626;border-color:#fca5a5;background:#fff5f5}
+  .favorite-pin-btn.active{color:#dc2626;border-color:#fca5a5;background:#fef2f2}
+  .favorite-pin-btn svg{width:14px;height:14px;display:block}
+  .favorites button.ghost{padding:4px 10px;font-size:12px}
+  .favorites button:disabled,#btn-favorite-current:disabled{opacity:.6;cursor:default}
+  .favorite-check-error{margin-top:4px;color:#b91c1c}
+
+  .media-dialog{width:min(850px,calc(100% - 28px));max-height:88vh;overflow:auto;color:var(--text);
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:0 15px 48px #0f172a40}
+  .media-dialog::backdrop{background:#0f172a80}
+  .media-dialog h2{font-size:17px;margin:0;overflow-wrap:anywhere}
+  .media-head,.media-tools{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .media-tools{margin:14px 0;flex-wrap:wrap}
+  .media-tools .group{display:flex;gap:6px;flex-wrap:wrap}
+  .media-parts{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,155px),1fr));gap:10px}
+  .media-part{min-width:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+  .media-part:has(input:checked){border-color:var(--accent)}
+  .media-visual{position:relative;height:140px;background:#f1f5f9;display:grid;place-items:center}
+  .media-visual img,.media-visual video{width:100%;height:140px;object-fit:contain}
+  .media-visual img{cursor:zoom-in}
+  .media-visual video{background:#111827}
+  .media-visual .unavailable{font-size:12px;color:var(--muted);padding:8px;text-align:center}
+  .media-part label{display:flex;align-items:center;gap:5px;padding:7px;cursor:pointer;font-size:12px}
+  .media-play{font-size:11px;position:absolute;right:5px;bottom:5px;padding:4px 8px}
+  .media-status{color:var(--muted);font-size:12px;min-height:18px}
+  .media-open.ghost{width:100%;margin-top:5px;padding:4px 6px;font-size:11px}
+  .media-lightbox img{display:block;width:auto;max-width:100%;max-height:70vh;margin:10px auto 0;object-fit:contain}
+  .quality-label{color:#a13b12;font-weight:600}
+
+  /* ===== 表单 ===== */
+  .row{display:flex;gap:10px;align-items:center}
+  .row .grow{flex:1}
+  input[type="text"],select{height:38px;border:1px solid #d1d5db;border-radius:8px;
+    padding:0 12px;font-size:13px;background:#fff;outline:none;width:100%;
+    transition:border-color .15s, box-shadow .15s}
+  input[type="text"]:focus,select:focus{border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(239,68,68,.12)}
+  button.primary{background:var(--accent);color:#fff;border:none;border-radius:8px;
+    padding:9px 18px;font-size:13px;font-weight:500;cursor:pointer;
+    transition:background .15s, transform .05s;white-space:nowrap}
+  button.primary:hover{background:var(--accent-d)}
+  button.primary:active{transform:translateY(1px)}
+  button.primary:disabled{background:#e5e7eb;color:#9ca3af;cursor:not-allowed}
+  /* 等待用户确认操作的闪烁提示 */
+  button.primary.needs-attention{animation:pulse-attention 1.2s ease-in-out infinite;
+    box-shadow:0 0 0 0 rgba(239,68,68,.55);transform:scale(1.03)}
+  @keyframes pulse-attention{
+    0%{box-shadow:0 0 0 0 rgba(239,68,68,.5)}
+    50%{box-shadow:0 0 0 12px rgba(239,68,68,0)}
+    100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}
+  }
+  button.ghost{background:#fff;color:var(--text);border:1px solid #d1d5db;border-radius:8px;
+    padding:8px 14px;font-size:13px;cursor:pointer;transition:border-color .15s}
+  button.ghost:hover{border-color:var(--accent);color:var(--accent)}
+
+  /* ===== 顶栏操作 ===== */
+  .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .toolbar .counter{margin-left:auto;color:var(--muted);font-size:13px}
+  .toolbar .counter b{color:var(--accent);font-weight:600;margin:0 2px}
+
+  /* ===== 筛选 ===== */
+  .filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .chip{font-size:12px;padding:5px 12px;border-radius:999px;background:#f1f5f9;
+    color:var(--muted);cursor:pointer;border:1px solid transparent;
+    transition:all .15s}
+  .chip:hover{background:#e2e8f0;color:var(--text)}
+  .chip.active{background:var(--tint);color:var(--accent);border-color:var(--accent)}
+  .chip .n{opacity:.6;margin-left:4px}
+
+  /* ===== 矩阵卡片 ===== */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
+    gap:16px;margin-top:8px}
+  .card{background:var(--card);border-radius:12px;overflow:hidden;
+    border:2px solid transparent;cursor:pointer;
+    transition:border-color .15s, transform .1s, box-shadow .15s;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);position:relative;
+    display:flex;flex-direction:column}
+  .card:hover{border-color:#fca5a5;box-shadow:0 4px 12px rgba(239,68,68,.12)}
+  .card.selected{border-color:var(--accent);box-shadow:0 4px 14px rgba(239,68,68,.22)}
+  .card .cover{aspect-ratio:3/4;background:#f1f5f9;position:relative;overflow:hidden}
+  .card .cover img{width:100%;height:100%;object-fit:cover;display:block;
+    background:#e2e8f0}
+  .card .cover .placeholder-fallback{position:absolute;inset:0;display:flex;
+    align-items:center;justify-content:center;color:#94a3b8;font-size:42px}
+  .card .cover .badge{position:absolute;top:8px;left:8px;
+    padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;
+    color:#fff;backdrop-filter:blur(4px)}
+  .badge.video{background:rgba(239,68,68,.85)}
+  .badge.image_gallery{background:rgba(59,130,246,.85)}
+  .badge.live_photo{background:rgba(139,92,246,.85)}
+  .badge.other{background:rgba(100,116,139,.85)}
+  .card .cover .check{position:absolute;top:8px;right:8px;width:24px;height:24px;
+    background:rgba(255,255,255,.92);border-radius:6px;border:1.5px solid #cbd5e1;
+    display:flex;align-items:center;justify-content:center;color:#fff;
+    font-size:14px;font-weight:700;transition:background .15s}
+  .card.selected .check{background:var(--accent);border-color:var(--accent)}
+  .card .meta{padding:8px 10px 10px;display:flex;flex-direction:column;gap:3px;
+    background:#fff;flex:1}
+  .card .title{font-size:12.5px;line-height:1.4;color:var(--text);
+    font-weight:500;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+    overflow:hidden;word-break:break-word;min-height:36px}
+  .card .date{font-size:11px;color:var(--muted)}
+  .card .title,.card .date,.failure-card .failure-meta,.media-part label span{cursor:text}
+  .card .downloaded{position:absolute;bottom:8px;right:8px;
+    background:rgba(34,197,94,.92);color:#fff;font-size:10px;
+    padding:2px 6px;border-radius:4px;font-weight:500}
+  .card .original-quality{background:#166534;font-weight:650}
+
+  /* ===== 提示 / 状态 ===== */
+  .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);
+    background:#1f2937;color:#fff;padding:10px 18px;border-radius:8px;
+    font-size:13px;z-index:1000;box-shadow:0 4px 12px rgba(0,0,0,.18);
+    opacity:0;transition:opacity .2s;pointer-events:none}
+  .toast.show{opacity:1}
+  .toast.error{background:var(--accent-d)}
+  .toast.success{background:#059669}
+  .progress{height:6px;background:#fee2e2;border-radius:3px;overflow:hidden;
+    margin-top:8px;display:none}
+  .progress.show{display:block}
+  .progress-bar{height:100%;background:var(--accent);width:0%;
+    transition:width .3s}
+  .status{font-size:12.5px;color:var(--muted);margin-top:6px;min-height:18px}
+
+  /* ===== 加载/空状态 ===== */
+  .loading{display:flex;align-items:center;justify-content:center;padding:60px;
+    color:var(--muted);font-size:13px}
+  .loading::before{content:"";width:14px;height:14px;border:2px solid var(--accent);
+    border-top-color:transparent;border-radius:50%;margin-right:8px;
+    animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .empty{padding:50px;text-align:center;color:var(--muted);font-size:13px}
+  .empty .ico{font-size:42px;margin-bottom:8px;opacity:.5}
+
+  /* ===== 进度面板 ===== */
+  .batch-progress{display:block;width:100%;height:12px;accent-color:var(--accent);margin:12px 0}
+  .history-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+  .history-column{border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
+  .history-heading{margin:0 0 8px;font-size:15px;display:flex;align-items:center;justify-content:space-between}
+  .history-heading span{color:var(--muted);font-variant-numeric:tabular-nums}
+  .history-heading-tools{display:flex;gap:10px;align-items:center}
+  .history-heading-tools button{padding:5px 11px;font-size:13px}
+  .history-list{list-style:none;margin:0;padding:0;max-height:510px;overflow:auto}
+  .history-item{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+  .history-item:last-child{border-bottom:0}
+  .history-thumb{width:68px;height:68px;flex:none;border-radius:8px;object-fit:cover;background:#f1f5f9}
+  .history-copy{min-width:0;flex:1}
+  .history-action{margin-top:7px;padding:4px 9px;font-size:12px}
+  .history-meta{font-size:12px;color:var(--muted);margin-top:3px}
+  .history-pages{display:flex;justify-content:space-between;gap:8px;margin-top:12px}
+  .author-summary{display:flex;align-items:flex-start;gap:14px;margin:4px 0 16px}
+  .author-summary img{width:58px;height:58px;border-radius:50%;object-fit:cover}
+  .author-summary .author-copy{min-width:0;overflow-wrap:anywhere}
+  .author-summary p{margin-top:5px;color:var(--muted);white-space:pre-wrap}
+  @media(max-width:680px){.history-columns{grid-template-columns:1fr}}
+  .progress-panel{background:linear-gradient(135deg,#fef2f2 0%,#fff 100%);
+    border:1px solid #fecaca}
+  .progress-panel .step-row{display:flex;justify-content:space-between;
+    align-items:center;padding:10px 14px;border-radius:10px;background:#fff;
+    margin-top:8px;font-size:13px;border:1px solid #fecaca}
+  .progress-panel .stat{display:flex;gap:14px;font-size:12.5px;color:var(--muted)}
+  .progress-panel .stat b{color:var(--text);font-weight:600;margin-right:4px}
+  .failure-panel{margin-top:10px;padding:12px 14px;border:1px solid #fecaca;
+    border-radius:10px;background:#fff}
+  .failure-head{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+  .failure-head b{color:var(--accent)}
+  .failure-head .hint{margin-left:auto;color:var(--muted);font-size:11px;font-weight:400}
+  .failure-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .failure-toolbar button{padding:6px 10px;font-size:12px}
+  .failure-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+    gap:8px;margin-top:10px;max-height:420px;overflow-y:auto}
+  .failure-card{display:flex;align-items:center;gap:9px;min-width:0;padding:8px;
+    border:1px solid #fee2e2;border-radius:8px;background:#fff7f7}
+  .failure-card:hover{border-color:#fca5a5}
+  .failure-card input{width:16px;height:16px;accent-color:var(--accent);flex:0 0 auto}
+  .failure-thumb{width:48px;height:62px;flex:0 0 48px;border-radius:5px;overflow:hidden;
+    background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:11px}
+  .failure-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .failure-meta{min-width:0;line-height:1.4}
+  .failure-title{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .failure-detail{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .failure-error{font-size:11px;color:#b91c1c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  @media (max-width:640px){
+    .failure-head .hint{display:none}
+    .failure-list{grid-template-columns:1fr}
+  }
+
+  /* ===== 下载路径 & 文件夹浏览器 ===== */
+  .archive-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .archive-drive-select{width:96px;flex:0 0 96px}
+  .archive-path-input{flex:1 1 260px;min-width:180px}
+  .archive-preview{margin-top:10px;padding:10px 12px;border-radius:10px;background:#f8fafc;border:1px solid var(--line);
+    display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}
+  .archive-preview-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .archive-preview-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:6px;
+    background:#fff;border:1px solid #e2e8f0;color:#334155;font-size:11.5px;max-width:100%;overflow-wrap:anywhere}
+  .archive-preview-chip b{color:var(--text);font-weight:600}
+  .folder-browser{margin-top:10px;border:1px solid var(--line);
+    border-radius:10px;background:#fff;overflow:hidden}
+  .folder-drives{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 12px;
+    background:#f8fafc;border-bottom:1px solid var(--line)}
+  .folder-drives-label{font-size:12px;color:var(--muted);margin-right:2px}
+  .folder-drive-btn{padding:3px 10px;font-size:12px;border-radius:6px;border:1px solid #d1d5db;
+    background:#fff;color:var(--text);cursor:pointer;transition:all .15s}
+  .folder-drive-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .folder-drive-btn.active{background:var(--tint);border-color:var(--accent);color:var(--accent);font-weight:600}
+  .folder-current-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
+    padding:8px 12px;background:#fff;border-bottom:1px solid var(--line)}
+  .folder-current{font-size:12px;color:var(--text);font-weight:500;word-break:break-all;flex:1 1 200px}
+  .folder-current-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+  .folder-current-actions button{padding:4px 10px;font-size:12px}
+  .folder-create-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fef2f2;border-bottom:1px solid #fecaca}
+  .folder-create-bar input{height:30px;font-size:12px;max-width:260px}
+  .folder-create-bar button{padding:4px 12px;font-size:12px}
+  .folder-list{max-height:240px;overflow-y:auto}
+  .folder-list .item{padding:8px 12px;font-size:13px;cursor:pointer;
+    display:flex;align-items:center;gap:8px;border-bottom:1px solid #f1f5f9}
+  .folder-list .item:hover{background:#f1f5f9}
+  .folder-list .item .ico{color:var(--accent);font-size:14px}
+  .folder-list .item .name{flex:1}
+  .folder-list .item .pick{font-size:11px;color:var(--muted);background:#fff;
+    border:1px solid var(--line);padding:2px 8px;border-radius:4px;cursor:pointer}
+  .folder-list .item:hover .pick{color:var(--accent);border-color:var(--accent)}
+
+  @media (max-width:640px){
+    .grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+    .card .title{min-height:32px;font-size:12px}
+    .panel{padding:16px}
+    .container{padding:16px 12px 80px}
+    .favorite-note-row{flex:1 1 100%}
+    .favorite-actions{width:100%}
+  }
+</style>
+</head>
+<body>
+
+<header class="app">
+  <h1>作品鉴赏downloader V1.0.1</h1>
+  <span class="badge" id="status-badge" style="margin-left:auto">检测中…</span>
+</header>
+<div class="disclaimer-banner" role="note" aria-label="免责声明">
+  <strong>免责声明：</strong>
+  <span>本软件仅用于个人学习、技术研究与创作者备份自有公开作品，不绕过任何付费或私密权限。请遵守法律法规与平台规则，严禁用于商业用途或二次侵权传播；如涉及侵权或版权异议，请于 <b>24 小时内</b> 立即删除，一切法律责任由使用者自行承担。</span>
+</div>
+
+<div class="container">
+
+  <!-- 输入作者主页链接 -->
+  <div class="panel">
+    <h2>1. 输入作者主页链接</h2>
+    <div class="row">
+      <input id="url" class="grow" type="text"
+        placeholder="粘贴抖音、小红书、微博的作者主页或单个作品链接">
+      <button id="btn-inspect" class="primary" style="padding:9px 26px">盘点作品</button>
+      <button id="btn-guest-inspect" class="ghost" title="通过读取作者主页或单个作品的公开数据">免登录盘点</button>
+    </div>
+    <div id="inspect-status" class="status" role="status" hidden></div>
+    <div class="desc">单个视频优先读取公开页面。作者主页和平台限制的作品使用所选浏览器的会话。盘点时间取决于网络、作者作品数量等多方面因素，请耐心等待。</div>
+    <section class="favorites" aria-labelledby="favorites-title">
+      <div class="favorites-head">
+        <div class="favorites-head-left">
+          <h3 id="favorites-title">常看作者</h3>
+          <span class="favorites-count" id="favorite-count" hidden></span>
+          <span class="favorites-pin-count" id="favorite-pin-count" hidden></span>
+          <span class="favorites-tip" id="favorite-tip" hidden>长按卡片或拖左侧手柄可排序，点图钉可置顶固定</span>
+        </div>
+        <div class="favorites-head-right">
+          <div class="search-box" id="favorite-search-box" hidden>
+            <span class="search-ico" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M13 13l4 4"/></svg></span>
+            <input id="favorite-search" type="text" autocomplete="off" placeholder="搜索作者（ID/账号/备注）" aria-label="搜索常看作者">
+            <button type="button" class="search-clear" id="favorite-search-clear" aria-label="清空搜索" hidden>×</button>
+            <div class="search-dropdown" id="favorite-search-results" role="listbox" hidden></div>
+          </div>
+          <button class="ghost" id="btn-check-favorites" hidden>检查更新</button>
+        </div>
+      </div>
+      <div id="favorite-status" class="status" role="status" hidden></div>
+      <div id="favorite-empty" class="favorite-empty">盘点作者主页后，可在作品列表中加入常看。</div>
+      <div id="favorite-authors" class="favorites-list"></div>
+    </section>
+  </div>
+
+  <!-- 登录态 -->
+  <div class="panel">
+    <h2>2. 登录态（Cookie）</h2>
+    <div class="row">
+      <select id="cookie-platform" style="max-width:140px">
+        <option value="douyin">抖音</option>
+        <option value="xiaohongshu">小红书</option>
+        <option value="weibo">微博</option>
+      </select>
+      <select id="cookie-browser" style="max-width:160px">
+        <option value="firefox">Firefox</option>
+        <option value="chrome">Chrome</option>
+        <option value="edge">Edge</option>
+      </select>
+      <button id="btn-import-cookie" class="ghost">导入浏览器 Cookie</button>
+    </div>
+    <div class="desc">请先在所选浏览器登录。盘点会优先读取浏览器的当前会话。 <a href="https://www.douyin.com/" target="_blank" rel="noopener">打开抖音</a> · <a href="https://www.xiaohongshu.com/" target="_blank" rel="noopener">打开小红书（国内）</a> · <a href="https://www.rednote.com/" target="_blank" rel="noopener">打开 RedNote（海外）</a> · <a href="https://weibo.com/" target="_blank" rel="noopener">打开微博</a></div>
+  </div>
+
+  <!-- 选择作品 -->
+  <div class="panel" id="panel-select" style="display:none">
+    <div class="panel-select-head">
+      <h2>3. 选择要下载的作品 <span style="color:var(--muted);font-weight:400">（点击卡片勾选 / 取消）</span></h2>
+      <div class="work-search-tools">
+        <div class="search-box" id="work-search-box">
+          <span class="search-ico" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M13 13l4 4"/></svg></span>
+          <input id="work-search" type="text" autocomplete="off" placeholder="搜索作品名称/文案…" aria-label="搜索作品名称或文案">
+          <button type="button" class="search-clear" id="work-search-clear" aria-label="清空作品搜索" hidden>×</button>
+          <div class="search-dropdown" id="work-search-results" role="listbox" hidden></div>
+        </div>
+        <div class="date-picker-wrap" id="work-date-wrap">
+          <button type="button" class="ghost work-date-btn" id="btn-work-date" aria-expanded="false">📅 按日期跳转</button>
+          <div class="date-popover" id="work-date-popover" hidden>
+            <div class="date-popover-row">
+              <select id="work-date-year" aria-label="选择年份"></select>
+              <button type="button" class="ghost" id="btn-jump-year">跳到该年</button>
+            </div>
+            <div class="date-popover-row">
+              <select id="work-date-month" aria-label="选择月份"></select>
+              <button type="button" class="ghost" id="btn-jump-month">跳到该月</button>
+            </div>
+            <div class="date-cal-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+            <div class="date-cal-grid" id="work-date-calendar"></div>
+            <div class="date-popover-foot">
+              <span id="work-date-summary">高亮日期可点击跳转</span>
+              <button type="button" class="ghost" id="btn-work-date-close" style="padding:2px 8px;font-size:11px">关闭</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbar" style="margin-bottom:14px">
+      <button class="ghost" id="btn-favorite-current" hidden>加入常看作者</button>
+      <button class="ghost" id="btn-select-all">全选</button>
+      <button class="ghost" id="btn-select-none">全不选</button>
+      <button class="ghost" id="btn-select-invert">反选</button>
+      <span class="counter">已选 <b id="selected-count">0</b> / <span id="total-count">0</span></span>
+      <button id="btn-download" class="primary" style="padding:9px 26px">下载选中作品</button>
+    </div>
+
+    <div class="filter-row" id="filter-row">
+      <span class="chip active" data-kind="all">全部 <span class="n" id="cnt-all">0</span></span>
+      <span class="chip" data-kind="video">视频 <span class="n" id="cnt-video">0</span></span>
+      <span class="chip" data-kind="image_gallery">图集 <span class="n" id="cnt-image">0</span></span>
+      <span class="chip" data-kind="live_photo">动图 <span class="n" id="cnt-live">0</span></span>
+    </div>
+
+    <div id="grid" class="grid"></div>
+  </div>
+
+  <!-- 下载路径 -->
+  <div class="panel">
+    <h2>下载路径</h2>
+    <div class="archive-row">
+      <select id="archive-drive" class="archive-drive-select" aria-label="选择盘符" title="选择盘符"></select>
+      <input id="archive-root" class="archive-path-input" type="text" placeholder="例如 D:\WorksDownloader" aria-label="当前下载根目录" />
+      <button id="btn-browse-folder" class="ghost" type="button">浏览文件夹…</button>
+      <button id="btn-set-archive-root" class="primary" type="button">保存路径</button>
+      <button id="btn-open-archive-base" class="ghost" type="button">打开目录</button>
+    </div>
+    <div class="archive-preview" id="archive-preview">
+      <div id="archive-hint">下载时会在选定文件夹下自动创建平台子文件夹（微博 / 小红书 / 抖音），其下再按「作者（账号）」归档；重启后始终记忆下载历史与对应作者目录。</div>
+      <div class="archive-preview-chips" id="archive-preview-chips"></div>
+    </div>
+    <div id="folder-browser" class="folder-browser" style="display:none">
+      <div class="folder-drives" id="folder-drives"></div>
+      <div class="folder-current-bar">
+        <div class="folder-current" id="folder-current"></div>
+        <div class="folder-current-actions">
+          <button type="button" class="ghost" id="btn-folder-new">＋ 新建子文件夹</button>
+          <button type="button" class="primary" id="btn-folder-pick-current">选定当前目录</button>
+        </div>
+      </div>
+      <div class="folder-create-bar" id="folder-create-bar" style="display:none">
+        <input type="text" id="folder-new-name" placeholder="输入新子文件夹名称…" maxlength="80">
+        <button type="button" class="primary" id="btn-folder-create-confirm">创建</button>
+        <button type="button" class="ghost" id="btn-folder-create-cancel">取消</button>
+      </div>
+      <div class="folder-list" id="folder-list"></div>
+    </div>
+  </div>
+
+  <!-- 下载进度 -->
+  <div class="panel progress-panel" id="panel-progress" style="display:none">
+    <h2>下载进度</h2>
+    <div id="progress-message" class="status" aria-live="polite">等待中…</div>
+    <progress id="progress-bar" class="batch-progress" value="0" max="100" aria-label="批量下载进度"></progress>
+    <div class="step-row" style="display:none" id="progress-detail">
+      <div class="stat"><span><b id="stat-completed">0</b>成功</span></div>
+      <div class="stat"><span><b id="stat-failed">0</b>失败</span></div>
+      <div class="stat"><span><b id="stat-processing">0</b>待处理</span></div>
+    </div>
+    <div class="step-row"><span id="progress-transfer" class="status"></span><b id="progress-percent">0%</b></div>
+    <button class="ghost" id="btn-resume" hidden>继续上次任务</button>
+    <div class="step-row" style="display:none;margin-top:8px" id="progress-actions">
+      <div style="font-size:12px;color:var(--muted);line-height:1.5" id="progress-saved-hint">
+        保存目录 <span id="progress-saved-path">-</span>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="ghost" id="btn-open-folder" style="padding:6px 14px;font-size:12px">📂 打开保存目录</button>
+      </div>
+    </div>
+    <div class="failure-panel" id="failure-panel" style="display:none">
+      <div class="failure-head">
+        <span>失败作品（<b id="failure-count">0</b>）</span>
+        <span class="hint">勾选后可只重试选中的作品</span>
+      </div>
+      <div class="failure-toolbar">
+        <button class="ghost" id="btn-failure-all">全选失败</button>
+        <button class="ghost" id="btn-failure-none">全不选</button>
+        <button class="primary" id="btn-retry-failures" disabled>重试选中失败作品</button>
+        <button class="ghost" id="btn-lower-failures" disabled>降一级画质下载</button>
+        <button class="ghost" id="btn-guest-failures" disabled>免登录重试</button>
+      </div>
+      <div class="failure-list" id="failure-list"></div>
+    </div>
+  </div>
+
+  <section class="panel" id="author-history" data-history-scope="author" aria-labelledby="author-history-heading" hidden>
+    <h2 id="author-history-heading">该作者下载历史</h2>
+    <div class="author-summary">
+      <img id="author-avatar" alt="" referrerpolicy="no-referrer" hidden>
+      <div class="author-copy">
+        <strong id="author-name"></strong>
+        <div id="author-id" class="history-meta"></div>
+        <p id="author-bio"></p>
+        <div id="author-folder" class="history-meta"></div>
+      </div>
+    </div>
+    <div class="history-columns">
+      <article class="history-column" data-history="success">
+        <h3 class="history-heading">成功<span data-total>0</span></h3>
+        <ul class="history-list" data-items></ul>
+        <div class="history-pages">
+          <button class="ghost" data-page="-1" disabled>上一页</button>
+          <button class="ghost" data-page="1" disabled>下一页</button>
+        </div>
+      </article>
+      <article class="history-column" data-history="failure">
+        <h3 class="history-heading">失败<span data-total>0</span></h3>
+        <ul class="history-list" data-items></ul>
+        <div class="history-pages">
+          <button class="ghost" data-page="-1" disabled>上一页</button>
+          <button class="ghost" data-page="1" disabled>下一页</button>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="panel" data-history-scope="all" aria-labelledby="history-heading">
+    <h2 id="history-heading">作品下载历史</h2>
+    <div class="history-columns">
+      <article class="history-column" data-history="success">
+        <h3 class="history-heading">成功历史<span data-total>0</span></h3>
+        <ul class="history-list" data-items></ul>
+        <div class="history-pages">
+          <button class="ghost" data-page="-1" disabled>上一页</button>
+          <button class="ghost" data-page="1" disabled>下一页</button>
+        </div>
+      </article>
+      <article class="history-column" data-history="failure">
+        <div class="history-heading"><h3 style="margin:0;font:inherit">失败历史</h3><div class="history-heading-tools">
+          <span data-total>0</span><button id="btn-history-retry-all" class="ghost" disabled>一键重下</button>
+        </div></div>
+        <ul class="history-list" data-items></ul>
+        <div class="history-pages">
+          <button class="ghost" data-page="-1" disabled>上一页</button>
+          <button class="ghost" data-page="1" disabled>下一页</button>
+        </div>
+      </article>
+    </div>
+  </section>
+
+</div>
+
+<dialog class="media-dialog" id="work-media-dialog" aria-labelledby="work-media-title">
+  <div class="media-head"><h2 id="work-media-title">作品媒体</h2><button type="button" class="ghost" id="work-media-close">关闭</button></div>
+  <div class="media-tools">
+    <div class="group"><button type="button" class="ghost" id="work-media-all">全选</button><button type="button" class="ghost" id="work-media-none">全不选</button></div>
+    <span class="media-status" id="work-media-count"></span>
+    <button type="button" class="primary" id="work-media-apply" disabled>应用到下载选择</button>
+  </div>
+  <div class="media-status" id="work-media-status" role="status"></div>
+  <div class="media-parts" id="work-media-parts"></div>
+</dialog>
+<dialog class="media-dialog media-lightbox" id="work-media-lightbox" aria-label="图片预览">
+  <div class="media-head"><span>图片预览</span><button type="button" class="ghost" id="work-media-lightbox-close">关闭</button></div>
+  <img alt="所选媒体预览">
+</dialog>
+<dialog class="media-dialog disclaimer-dialog" id="disclaimer-dialog" closedby="none" aria-labelledby="disclaimer-title">
+  <div class="disclaimer-head">
+    <h2 id="disclaimer-title">使用前请阅读免责声明</h2>
+  </div>
+  <div class="disclaimer-body">
+    <ol>
+      <li><strong>仅限合规用途：</strong>本工具仅用于个人学习、技术研究与创作者备份自有公开作品，不绕过任何平台的付费、会员或私密权限。</li>
+      <li><strong>尊重原创版权：</strong>请严格遵守所在地区法律法规与各平台用户协议，尊重原作者著作权、肖像权与隐私权，严禁用于任何商业用途、公开分发或侵权行为。</li>
+      <li><strong>24 小时侵权删除：</strong>如所保存的内容涉及侵权、违约或版权方提出异议，请使用者于 <strong>24 小时内</strong> 自行彻底删除相关文件。</li>
+      <li><strong>责任自负：</strong>因使用本工具或所保存内容产生的一切法律责任与风险均由使用者自行承担，软件作者不承担任何连带责任。</li>
+    </ol>
+  </div>
+  <div class="disclaimer-options" id="disclaimer-options">
+    <label class="disclaimer-option is-locked">
+      <input type="radio" name="disclaimer-choice" value="agree" disabled>
+      <span>我同意声明</span>
+    </label>
+    <label class="disclaimer-option is-locked">
+      <input type="radio" name="disclaimer-choice" value="disagree" disabled>
+      <span>不同意声明</span>
+    </label>
+  </div>
+  <div class="disclaimer-foot">
+    <span class="disclaimer-hint" id="disclaimer-hint">请仔细阅读免责声明，5 秒后方可勾选选项。</span>
+    <button type="button" class="primary" id="btn-disclaimer-confirm" disabled>确认（5s）</button>
+  </div>
+</dialog>
+<dialog class="media-dialog disclaimer-dialog" id="first-path-dialog" aria-labelledby="first-path-title">
+  <div class="disclaimer-head">
+    <h2 id="first-path-title">首次启动：确认作品保存目录</h2>
+  </div>
+  <div class="first-path-box">
+    <div>软件默认将作品保存到以下目录，并按「平台 / 作者（账号）」自动分类：</div>
+    <code id="first-path-default"></code>
+    <div style="margin-top:8px;font-size:12px;color:var(--muted)">您也可以随时在页面下方的「下载路径」中切换其他盘符（自动使用 &lt;盘符&gt;\WorksDownloader）或自定义文件夹。</div>
+  </div>
+  <div class="first-path-actions">
+    <button type="button" class="ghost" id="btn-first-path-custom">自定义选择文件夹</button>
+    <button type="button" class="primary" id="btn-first-path-default">使用默认路径</button>
+  </div>
+</dialog>
+<div class="toast" id="toast"></div>
+<button id="copy-selection" class="ghost copy-menu" type="button" hidden>复制所选文字</button>
+
+<script>
+const CHECK_TIMEOUT_MS = 60000;
+const DOWNLOAD_TIMEOUT_MS = 60000;
+const INVENTORY_TIMEOUT = '盘点超时（60 秒）。请重新盘点或更换网络。';
+const FAVORITE_TIMEOUT = '更新检查超时（60 秒）。请重试或更换网络。';
+const DOWNLOAD_TIMEOUT = '下载超时（60 秒无进展）。请检查网络或继续上次任务。';
+const DOWNLOAD_REQUEST = {timeout: DOWNLOAD_TIMEOUT_MS, timeoutMessage: DOWNLOAD_TIMEOUT};
+
+async function resumeLastTask() {
+  const response = await fetchWithRetry('/api/resume', {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'}, DOWNLOAD_REQUEST);
+  const r = response.data || {};
+  if (!r.ok) return toast(r.error || '无法继续任务', 'error');
+  state.job_id = r.state.job_id;
+  document.querySelector('#panel-progress').style.display = '';
+  pollProgress();
+}
+
+// ----- 全局状态 -----
+const state = {
+  job_id: null,
+  platform: 'douyin',
+  items: [],
+  selected: new Set(),
+  mediaSelections: new Map(),
+  filter: 'all',
+  polling: null,
+  submitting: false,
+  downloading: false,
+  progressState: null,
+};
+let failureItems = [];
+let failureSelected = new Set();
+let failureJobId = null;
+let firstLaunchPathPending = false;
+let firstLaunchPathPrompted = false;
+
+const PLATFORM_LABEL = {douyin: '抖音', xiaohongshu: '小红书', weibo: '微博'};
+function detectPlatform(url) {
+  const value = String(url || '').toLowerCase();
+  if (value.includes('xiaohongshu.com') || value.includes('rednote.com') || value.includes('xhslink.cn')) return 'xiaohongshu';
+  if (value.includes('weibo.com') || value.includes('weibo.cn')) return 'weibo';
+  return 'douyin';
+}
+function itemKind(it) {
+  const direct = String(it?.douyin_media?.kind || it?.weibo_media?.kind || it?.media_kind || '').toLowerCase();
+  if (direct === 'video' || direct === 'image_gallery' || direct === 'live_photo') return direct;
+  const xhs = String(it?.xiaohongshu_media_type || it?.type || '').toLowerCase();
+  if (xhs === 'video') return 'video';
+  if (state.platform === 'xiaohongshu' || state.platform === 'weibo') return 'image_gallery';
+  return 'other';
+}
+function platformContentPath() {
+  return `content\\${PLATFORM_LABEL[state.platform] || state.platform}\\`;
+}
+function updatePlatformPathUi() {
+  const suffix = platformContentPath();
+  const pathEl = $('#progress-platform-path');
+  if (pathEl) pathEl.textContent = suffix;
+  const open = $('#btn-open-folder');
+  if (open) open.textContent = `📂 打开${PLATFORM_LABEL[state.platform] || '平台'}文件夹`;
+}
+
+// ----- DOM 工具 -----
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => Array.from(document.querySelectorAll(s));
+const toast = (msg, type='info', ms=2400) => {
+  const t = $('#toast');
+  t.className = 'toast show ' + (type === 'error' ? 'error' : type === 'success' ? 'success' : '');
+  t.textContent = msg;
+  clearTimeout(window.__toast_t);
+  window.__toast_t = setTimeout(() => t.classList.remove('show'), ms);
+};
+
+function hasSelectionWithin(element) {
+  const selection = window.getSelection();
+  return Boolean(selection && !selection.isCollapsed && selection.containsNode(element, true));
+}
+
+function selectedText(element) {
+  if (element && Number.isInteger(element.selectionStart) && element.selectionEnd > element.selectionStart) {
+    return element.value.slice(element.selectionStart, element.selectionEnd);
+  }
+  return window.getSelection()?.toString() || '';
+}
+
+async function copyText(text, message, source = document.activeElement) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const field = document.createElement('textarea');
+    const active = document.activeElement;
+    const selection = window.getSelection();
+    const ranges = Array.from({length:selection.rangeCount}, (_, i) => selection.getRangeAt(i).cloneRange());
+    field.value = text;
+    field.style.cssText = 'position:fixed;opacity:0';
+    (source?.closest?.('dialog[open]') || document.body).appendChild(field);
+    field.select();
+    const copied = document.execCommand('copy');
+    field.remove();
+    active?.focus({preventScroll:true});
+    selection.removeAllRanges();
+    for (const range of ranges) selection.addRange(range);
+    if (!copied) { toast('无法复制所选内容', 'error'); return; }
+  }
+  toast(message, 'success');
+}
+
+const copyMenu = $('#copy-selection');
+let copyMenuText = '';
+let copyMenuSource = null;
+document.addEventListener('contextmenu', event => {
+  const text = selectedText(event.target);
+  if (!text.trim()) return;
+  event.preventDefault();
+  copyMenuText = text;
+  copyMenuSource = event.target;
+  (event.target.closest('dialog[open]') || document.body).appendChild(copyMenu);
+  copyMenu.hidden = false;
+  copyMenu.style.left = Math.min(event.clientX, innerWidth - copyMenu.offsetWidth - 4) + 'px';
+  copyMenu.style.top = Math.min(event.clientY, innerHeight - copyMenu.offsetHeight - 4) + 'px';
+});
+copyMenu.addEventListener('mousedown', event => event.preventDefault());
+copyMenu.addEventListener('click', () => {
+  copyMenu.hidden = true;
+  void copyText(copyMenuText, '已复制所选文字', copyMenuSource);
+});
+document.addEventListener('pointerdown', event => {
+  if (event.button !== 2 && !copyMenu.contains(event.target)) copyMenu.hidden = true;
+}, true);
+document.addEventListener('scroll', () => { copyMenu.hidden = true; }, true);
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !copyMenu.hidden) {
+    event.preventDefault();
+    copyMenu.hidden = true;
+    return;
+  }
+  if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'c') return;
+  const text = selectedText(document.activeElement);
+  if (!text) return;
+  event.preventDefault();
+  void copyText(text, '已复制所选文字', event.target);
+});
+
+function updateFailureRetryButton() {
+  const button = $('#btn-retry-failures');
+  if (button) button.disabled = state.downloading || state.submitting || failureSelected.size === 0;
+  const noEligibleSelection = state.downloading || state.submitting ||
+    !failureItems.some(row => canLowerQuality(row.platform) && failureSelected.has(String(row.id)));
+  $('#btn-lower-failures').disabled = noEligibleSelection;
+  $('#btn-guest-failures').disabled = noEligibleSelection;
+}
+
+function canLowerQuality(platform) { return ['douyin', 'xiaohongshu', 'weibo'].includes(platform); }
+
+function renderFailureList() {
+  const panel = $('#failure-panel');
+  const list = $('#failure-list');
+  const count = $('#failure-count');
+  if (!panel || !list) return;
+  failureSelected = new Set([...failureSelected].filter(id => failureItems.some(it => String(it.id) === id)));
+  if (count) count.textContent = failureItems.length;
+  if (!failureItems.length) {
+    panel.style.display = 'none';
+    list.innerHTML = '';
+    updateFailureRetryButton();
+    return;
+  }
+  panel.style.display = '';
+  list.innerHTML = failureItems.map(it => {
+    const id = String(it.id);
+    const kind = itemKind(it);
+    const label = TYPE_LABEL[kind] || '作品';
+    const date = String(it.published_at || '').slice(0, 10);
+    const cover = `/api/cover?job_id=${encodeURIComponent(failureJobId || '')}&item_id=${encodeURIComponent(id)}&t=0`;
+    const checked = failureSelected.has(id) ? ' checked' : '';
+    const code = escape(it.error_code || 'download_failed');
+    const message = escape(it.error_message || '下载失败');
+    return `<label class="failure-card" data-failure-id="${escape(id)}">
+      <input type="checkbox" data-failure-id="${escape(id)}"${checked}>
+      <span class="failure-thumb"><img loading="lazy" src="${cover}" alt="" onerror="this.style.display='none'"></span>
+      <span class="failure-meta">
+        <span class="failure-title">${escape(it.title || '未命名作品')}</span>
+        <span class="failure-detail">${label}${date ? ' · ' + escape(date) : ''}</span>
+        <span class="failure-error" title="${message}">${code}：${message}</span>
+      </span>
+    </label>`;
+  }).join('');
+  $$('#failure-list label').forEach(row => row.addEventListener('click', event => {
+    if (hasSelectionWithin(row)) event.preventDefault();
+  }));
+  $$('#failure-list input[data-failure-id]').forEach(input => {
+    input.addEventListener('click', event => event.stopPropagation());
+    input.addEventListener('change', () => {
+      const id = String(input.dataset.failureId || '');
+      if (input.checked) failureSelected.add(id);
+      else failureSelected.delete(id);
+      updateFailureRetryButton();
+    });
+  });
+  updateFailureRetryButton();
+}
+
+async function loadFailures(jobId) {
+  if (!jobId) return;
+  try {
+    const r = await fetch(`/api/failures?job_id=${encodeURIComponent(jobId)}`).then(x => x.json());
+    if (!r || !r.ok) return;
+    const sameJob = failureJobId === jobId;
+    failureJobId = jobId;
+    failureItems = Array.isArray(r.failures) ? r.failures : [];
+    // Keep an explicit user selection while progress polling refreshes the
+    // list; only a new parent job starts with no selected retries.
+    if (!sameJob) failureSelected = new Set();
+    renderFailureList();
+  } catch (e) {
+    // The progress result remains useful even if the optional failure panel
+    // cannot be loaded (for example while the local service restarts).
+  }
+}
+
+$('#btn-failure-all').addEventListener('click', () => {
+  failureSelected = new Set(failureItems.map(it => String(it.id)));
+  renderFailureList();
+});
+$('#btn-failure-none').addEventListener('click', () => {
+  failureSelected = new Set();
+  renderFailureList();
+});
+$('#btn-retry-failures').addEventListener('click', () => void retryFailures());
+$('#btn-lower-failures').addEventListener('click', () => void retryFailures(true));
+$('#btn-guest-failures').addEventListener('click', () => void retryFailures(false, true));
+
+async function retryFailures(allowLower = false, guestOnly = false) {
+  if (!failureJobId || failureSelected.size === 0) {
+    toast('请先勾选要重试的失败作品', 'error');
+    return;
+  }
+  const ids = failureItems.filter(row => failureSelected.has(String(row.id)) &&
+    (!(allowLower || guestOnly) || canLowerQuality(row.platform))).map(row => String(row.id));
+  const button = $(guestOnly ? '#btn-guest-failures' : allowLower ? '#btn-lower-failures' : '#btn-retry-failures');
+  const label = button.textContent;
+  state.submitting = true;
+  syncDownloadButtons();
+  button.textContent = '提交重试中…';
+  try {
+    const response = await fetchWithRetry('/api/retry-failures', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({job_id: failureJobId, ids, allow_lower: allowLower, guest_only: guestOnly})
+    }, DOWNLOAD_REQUEST);
+    const r = response.data;
+    if (!r || !r.ok) {
+      const active = r && r.active_job_id ? `（当前任务 ${r.active_job_id}）` : '';
+      toast('重试提交失败：' + ((r && r.error) || '未知错误') + active, 'error');
+      return;
+    }
+    failureSelected = new Set();
+    $('#panel-progress').style.display = '';
+    $('#progress-message').textContent = `已提交 ${ids.length} 个失败作品，正在重试…`;
+    toast(`已提交 ${ids.length} 个失败作品重试`, 'success');
+    pollProgress();
+  } catch (e) {
+    toast('重试出错：' + e.message, 'error');
+  } finally {
+    button.textContent = label;
+    state.submitting = false;
+    syncDownloadButtons();
+  }
+}
+
+// ----- 自检 -----
+async function selfcheck() {
+  try {
+    // One-file EXE instances can be restarting while the browser tab is
+    // reconnecting (especially when an old 8000/8786 instance is still
+    // closing).  Use the same bounded retry path as mutating requests so a
+    // transient socket reset does not leave the UI stuck at “初始化失败”.
+    const response = await fetchWithRetry('/api/selfcheck', {}, {tries: 3, delay: 500});
+    const r = response.data || {};
+    const badge = $('#status-badge');
+    if (response.ok && r.ok) {
+      badge.textContent = r.preparing ? '就绪 · 正在准备下载组件' : (r.download_ready ? '已就绪' : '依赖不完整');
+      if (r.preparing) setTimeout(selfcheck, 900);
+      else if (r.download_ready) {
+        mediaRuntimeReady = true;
+        maybeCheckFavorites();
+      }
+      badge.style.background = r.download_ready ? 'rgba(34,197,94,.85)' : 'rgba(245,158,11,.85)';
+    } else {
+      badge.textContent = '初始化失败';
+      badge.title = r.error || '';
+      badge.style.background = 'rgba(239,68,68,.85)';
+    }
+    return r;
+  } catch (e) {
+    $('#status-badge').textContent = '服务未连接';
+    return { ok: false };
+  }
+}
+
+// ----- 盘点 -----
+$('#btn-inspect').addEventListener('click', () => void inspect());
+$('#btn-guest-inspect').addEventListener('click', () => void inspect(true));
+
+$('#url').addEventListener('keydown', event => {
+  if (event.key === 'Enter' && !$('#btn-inspect').disabled) void inspect();
+});
+$('#btn-resume').addEventListener('click', () => {
+  resumeLastTask().catch(error => toast(error.message, 'error'));
+});
+
+async function inspect(guestOnly = false) {
+  if (state.downloading || state.submitting || $('#btn-inspect').disabled) return;
+  const raw = $('#url').value.trim();
+  const url = raw.match(/https?:\/\/[^\s<>，。！？、]+/i)?.[0] || raw;
+  if (!url) { toast('请输入作者主页或作品链接', 'error'); return; }
+  const btn = $(guestOnly ? '#btn-guest-inspect' : '#btn-inspect');
+  const label = btn.textContent;
+  const status = $('#inspect-status');
+  status.hidden = true;
+  state.inspecting = true;
+  $('#btn-inspect').disabled = true;
+  $('#btn-guest-inspect').disabled = true;
+  btn.textContent = '盘点中…';
+  const browser = $('#cookie-browser').value;
+  currentFavorite = null;
+  renderFavoriteButtons();
+  $('#panel-select').style.display = 'none';
+  if ($('#work-search')) $('#work-search').value = '';
+  if ($('#work-search-clear')) $('#work-search-clear').hidden = true;
+  if ($('#work-search-results')) $('#work-search-results').hidden = true;
+  if ($('#work-date-popover')) $('#work-date-popover').hidden = true;
+  if ($('#btn-work-date')) {
+    $('#btn-work-date').classList.remove('active');
+    $('#btn-work-date').setAttribute('aria-expanded', 'false');
+    $('#btn-work-date').textContent = '📅 按日期跳转';
+  }
+  clearTimeout(coverPollTimer);
+  failureItems = [];
+  failureSelected = new Set();
+  failureJobId = null;
+  renderFailureList();
+  try {
+    const response = await fetchWithRetry('/api/inspect', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url, browser, guest_only: guestOnly})
+    }, {timeout: CHECK_TIMEOUT_MS, timeoutMessage: INVENTORY_TIMEOUT});
+    const r = response.data;
+    if (!response.ok || !r) {
+      const detail = (r && (r.error || r.message)) || (response.raw || '').slice(0, 180) || `HTTP ${response.status || 0}`;
+      throw new Error(r?.code === 'inventory_timeout' ? INVENTORY_TIMEOUT : '盘点失败：' + detail);
+    }
+    if (!r.ok) { toast('盘点失败：' + (r.error || '未知错误'), 'error'); return; }
+    state.job_id = r.job_id;
+    state.platform = r.platform || detectPlatform(url);
+    showAuthorHistory(r);
+    if (r.author_folder && !r.creator.single_work) {
+      currentFavorite = {key: `${r.platform}:${r.creator.id}`, job_id: r.job_id, browser};
+      void updateFavorites();
+    }
+    state.items = r.items || [];
+    readyCovers = new Set();
+    $('#cookie-platform').value = state.platform;
+    void loadArchiveRoot();
+    updatePlatformPathUi();
+    state.selected.clear();
+    state.mediaSelections.clear();
+    if (state.items.length === 0) { toast('该作者没有任何作品', 'error'); return; }
+    renderGrid();
+    updateCounters();
+    $('#panel-select').style.display = '';
+    if (r.creator.access === 'public' && !r.creator.single_work) {
+      status.textContent = '免登录盘点到 ' + state.items.length + ' 个公开作品。' +
+        (r.creator.inventory_complete ? '' : '平台未提供完整列表，可用登录态继续盘点。');
+      status.hidden = false;
+    }
+    toast(`已盘点到 ${state.items.length} 个作品，正在后台缓存预览图…`, 'success');
+    setTimeout(() => $('#panel-select').scrollIntoView({behavior:'smooth',block:'start'}), 60);
+    startCoverPolling();
+  } catch (e) {
+    status.textContent = e.message;
+    status.hidden = false;
+    toast(e.message, 'error');
+  } finally {
+    state.inspecting = false;
+    btn.textContent = label;
+    syncDownloadButtons();
+  }
+}
+
+let favoriteAuthors = [];
+const favoriteNotes = new Map();
+let currentFavorite = null;
+let favoriteChecking = false;
+let startupUpdateChecked = false;
+let mediaRuntimeReady = false;
+let disclaimerAccepted = false;
+let favoriteTimer;
+let favoriteRequest = 0;
+let favoriteDeadline = 0;
+let favoriteDragging = false;
+let favoritePendingRender = false;
+
+const DRAG_GRIP_SVG = '<svg viewBox="0 0 12 20" width="12" height="18" aria-hidden="true"><circle cx="3.5" cy="4" r="1.4" fill="currentColor"/><circle cx="8.5" cy="4" r="1.4" fill="currentColor"/><circle cx="3.5" cy="10" r="1.4" fill="currentColor"/><circle cx="8.5" cy="10" r="1.4" fill="currentColor"/><circle cx="3.5" cy="16" r="1.4" fill="currentColor"/><circle cx="8.5" cy="16" r="1.4" fill="currentColor"/></svg>';
+const PIN_ICON_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>';
+const PIN_ICON_FILLED_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>';
+
+function maybeCheckFavorites() {
+  if (!disclaimerAccepted || !mediaRuntimeReady || !favoriteAuthors.length || favoriteChecking || startupUpdateChecked) return;
+  startupUpdateChecked = true;
+  void updateFavorites('check');
+}
+
+function showFavoriteStatus(message) {
+  const status = $('#favorite-status');
+  status.textContent = message;
+  status.hidden = !message;
+}
+
+function renderFavoriteButtons() {
+  const busy = $('#btn-inspect').disabled || state.submitting || state.downloading;
+  const current = $('#btn-favorite-current');
+  current.hidden = !currentFavorite;
+  const saved = currentFavorite && favoriteAuthors.some(row => row.key === currentFavorite.key);
+  current.disabled = busy || saved;
+  current.textContent = saved ? '已加入常看' : '加入常看作者';
+  const check = $('#btn-check-favorites');
+  check.hidden = !favoriteAuthors.length;
+  check.disabled = favoriteChecking || $('#btn-inspect').disabled;
+  check.textContent = favoriteChecking ? '检查中…' : '检查更新';
+  for (const button of $$('#favorite-authors [data-action="inspect"]')) button.disabled = busy;
+}
+
+function formatFavoriteTime(value) {
+  return new Intl.DateTimeFormat('zh-CN', {year:'numeric', month:'2-digit', day:'2-digit',
+    hour:'2-digit', minute:'2-digit', hourCycle:'h23'}).format(new Date(value * 1000));
+}
+
+function authorAvatarProxyUrl(platform, key, rawUrl) {
+  if (!/^https?:\/\//i.test(String(rawUrl || '').trim())) return '';
+  const params = new URLSearchParams({platform: platform || ''});
+  if (key) params.set('key', key);
+  if (!key) params.set('url', rawUrl);
+  params.set('v', String(rawUrl).slice(-18));
+  return '/api/author-avatar?' + params.toString();
+}
+
+function renderFavoriteAuthors() {
+  if (favoriteDragging) {
+    favoritePendingRender = true;
+    return;
+  }
+  favoritePendingRender = false;
+  $('#favorite-empty').hidden = Boolean(favoriteAuthors.length);
+  const countBadge = $('#favorite-count');
+  const pinBadge = $('#favorite-pin-count');
+  const tip = $('#favorite-tip');
+  const pinnedTotal = favoriteAuthors.filter(a => a.pinned).length;
+  if (countBadge) {
+    countBadge.hidden = !favoriteAuthors.length;
+    countBadge.textContent = `${favoriteAuthors.length} 位`;
+  }
+  if (pinBadge) {
+    pinBadge.hidden = !pinnedTotal;
+    pinBadge.textContent = `已置顶 ${pinnedTotal} 位`;
+  }
+  if (tip) {
+    tip.hidden = favoriteAuthors.length < 2 && !pinnedTotal;
+  }
+  const favSearchBox = $('#favorite-search-box');
+  if (favSearchBox) favSearchBox.hidden = !favoriteAuthors.length;
+  $('#favorite-authors').innerHTML = favoriteAuthors.map((author, index) => {
+    const name = escape(author.name || '作者');
+    const avatarUrl = authorAvatarProxyUrl(author.platform, author.key, author.avatar);
+    const avatar = avatarUrl ? `<img loading="lazy" src="${escape(avatarUrl)}" alt="">` : '';
+    const platformName = PLATFORM_LABEL[author.platform] || author.platform || '平台';
+    const platformClass = ['douyin', 'xiaohongshu', 'weibo'].includes(author.platform) ? author.platform : '';
+    const accountLabel = author.platform === 'douyin' ? '抖音号' : author.platform === 'weibo' ? '微博号' : '小红书号';
+    const accountValue = String(author.account || '').trim();
+    const idValue = String(author.id || '').trim();
+    const accountHtml = `<span class="favorite-account">${accountLabel} ${escape(accountValue || '平台未提供')}</span>`;
+    const idHtml = idValue
+      ? `<span class="favorite-id" title="ID ${escape(idValue)}">ID <span class="favorite-id-value">${escape(idValue)}</span></span>` : '';
+    const url = escape(author.url);
+    const date = author.latest_at ? formatFavoriteTime(author.latest_at) : '发布时间未提供';
+    const badge = author.new_count
+      ? `<span class="favorite-update" title="上次盘点后新增 ${author.new_count} 件 · 最新 ${date}">最近更新 +${author.new_count} · ${date}</span>` : '';
+    const pinned = Boolean(author.pinned);
+    const cardClasses = `favorite-card${pinned ? ' is-pinned' : ''}${badge ? ' has-update' : ''}`;
+    return `<article class="${cardClasses}" data-index="${index}" data-key="${escape(author.key)}" data-pinned="${pinned ? '1' : '0'}">
+      <div class="favorite-row">
+        <span class="favorite-drag-handle" title="拖动调整排序（也可长按卡片拖动）" aria-hidden="true">${DRAG_GRIP_SVG}</span>
+        <div class="favorite-avatar"><span aria-hidden="true">${escape([...(author.name || '作')][0])}</span>${avatar}</div>
+        <div class="favorite-main">
+          <div class="favorite-title-row">
+            <span class="favorite-platform ${platformClass}">${platformName}</span>
+            <div class="favorite-name" title="${name}">${name}</div>
+            ${badge}
+          </div>
+          <div class="favorite-ids">${accountHtml}${idHtml}</div>
+          ${author.error ? `<div class="favorite-check-error">${escape(author.error)}</div>` : ''}
+        </div>
+        <div class="favorite-note-row">
+          <input class="favorite-note" aria-label="备注 ${name}" placeholder="添加备注…" maxlength="120" value="${escape(favoriteNotes.get(author.key) ?? author.note ?? '')}">
+          <button type="button" class="ghost favorite-note-save" data-action="note">保存</button>
+        </div>
+        <div class="favorite-actions">
+          <button type="button" class="ghost favorite-pin-btn${pinned ? ' active' : ''}" data-action="pin" aria-pressed="${pinned ? 'true' : 'false'}" title="${pinned ? '取消置顶' : '置顶固定（特别关注）'}" aria-label="${pinned ? '取消置顶' : '置顶固定'} ${name}">${pinned ? PIN_ICON_FILLED_SVG : PIN_ICON_SVG}</button>
+          <button class="ghost" data-action="inspect">盘点</button>
+          <button class="ghost" data-action="copy" title="${url}">复制链接</button>
+          <button class="ghost" data-action="remove" aria-label="移除常看作者 ${name}">移除</button>
+        </div>
+      </div>
+    </article>`;
+  }).join('');
+  for (const avatar of $$('#favorite-authors img')) {
+    avatar.addEventListener('error', () => avatar.remove(), {once:true});
+    if (avatar.complete && !avatar.naturalWidth) avatar.remove();
+  }
+  renderFavoriteButtons();
+}
+
+async function updateFavorites(action, data = {}) {
+  clearTimeout(favoriteTimer);
+  const request = ++favoriteRequest;
+  if (action === 'check') {
+    startupUpdateChecked = true;
+    favoriteDeadline = performance.now() + CHECK_TIMEOUT_MS;
+    favoriteChecking = true;
+    showFavoriteStatus('');
+    renderFavoriteButtons();
+  }
+  try {
+    const remaining = favoriteChecking ? Math.max(1, favoriteDeadline - performance.now()) : 6000;
+    const response = await fetchWithRetry('/api/favorite-authors', action ? {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action, ...data})
+    } : {}, {tries:1, timeout:Math.min(remaining, action === 'check' ? CHECK_TIMEOUT_MS : 4000),
+      timeoutMessage:FAVORITE_TIMEOUT});
+    if (!response.ok || !response.data?.ok) throw new Error(response.data?.error || '暂时无法读取常看作者。');
+    if (action === 'note' && favoriteNotes.get(data.key)?.trim() === data.note) favoriteNotes.delete(data.key);
+    if (request !== favoriteRequest) return;
+    if (action === 'note') toast('备注已保存', 'success');
+    if (action === 'pin') toast(data.pinned ? '已置顶固定该作者' : '已取消置顶', 'success', 1800);
+    if (action === 'reorder') toast('已保存常看作者排序', 'success', 1600);
+    const next = response.data;
+    const changed = JSON.stringify(next.authors) !== JSON.stringify(favoriteAuthors);
+    favoriteAuthors = next.authors;
+    if (next.checking && !favoriteDeadline) favoriteDeadline = performance.now() + CHECK_TIMEOUT_MS;
+    favoriteChecking = next.checking && performance.now() < favoriteDeadline;
+    if (!favoriteChecking) {
+      favoriteDeadline = 0;
+      showFavoriteStatus(next.checking ? FAVORITE_TIMEOUT : '');
+    }
+    if (changed) renderFavoriteAuthors();
+    else renderFavoriteButtons();
+    queueMicrotask(maybeCheckFavorites);
+    clearTimeout(favoriteTimer);
+    if (favoriteChecking) {
+      favoriteTimer = setTimeout(() => void updateFavorites(), Math.min(1700, favoriteDeadline - performance.now()));
+    }
+  } catch (error) {
+    if (request !== favoriteRequest) return;
+    if (favoriteChecking && performance.now() < favoriteDeadline) {
+      favoriteTimer = setTimeout(() => void updateFavorites(), Math.min(1700, favoriteDeadline - performance.now()));
+    } else if (favoriteChecking) {
+      favoriteChecking = false;
+      favoriteDeadline = 0;
+      showFavoriteStatus(FAVORITE_TIMEOUT);
+      renderFavoriteButtons();
+    }
+    if (action && error.message !== FAVORITE_TIMEOUT) {
+      showFavoriteStatus(error.message);
+      toast(error.message, 'error');
+    }
+  }
+}
+
+$('#btn-favorite-current').addEventListener('click', () => {
+  if (currentFavorite) void updateFavorites('add', currentFavorite);
+});
+$('#btn-check-favorites').addEventListener('click', () => {
+  void updateFavorites('check', {browser: $('#cookie-browser').value});
+});
+function saveFavoriteNote(card) {
+  const author = favoriteAuthors[Number(card.dataset.index)];
+  if (!author) return;
+  const note = card.querySelector('.favorite-note').value.trim();
+  void updateFavorites('note', {key: author.key, note});
+}
+
+$('#favorite-authors').addEventListener('input', event => {
+  if (!event.target.matches('.favorite-note')) return;
+  const card = event.target.closest('[data-index]');
+  const author = favoriteAuthors[Number(card?.dataset.index)];
+  if (author) favoriteNotes.set(author.key, event.target.value);
+});
+$('#favorite-authors').addEventListener('keydown', event => {
+  if (event.key !== 'Enter' || !event.target.matches('.favorite-note')) return;
+  event.preventDefault();
+  saveFavoriteNote(event.target.closest('[data-index]'));
+});
+$('#favorite-authors').addEventListener('click', event => {
+  if (favoriteDragging) return;
+  const button = event.target.closest('[data-action]');
+  if (!button) return;
+  const card = button.closest('[data-index]');
+  const author = favoriteAuthors[Number(card?.dataset.index)];
+  if (!author) return;
+  if (button.dataset.action === 'note') saveFavoriteNote(card);
+  if (button.dataset.action === 'pin') void updateFavorites('pin', {key: author.key, pinned: !author.pinned});
+  if (button.dataset.action === 'copy') void copyText(author.url, '已复制主页链接', button);
+  if (button.dataset.action === 'remove') void updateFavorites('remove', {key: author.key});
+  if (button.dataset.action === 'inspect') {
+    $('#url').value = author.url;
+    void inspect();
+  }
+});
+
+// ----- 常看作者卡片长按 / 手柄拖动排序 -----
+(() => {
+  const list = $('#favorite-authors');
+  let pressTimer = null;
+  let candidate = null;
+  let active = null;
+  let scrollRaf = 0;
+
+  function clearCandidate() {
+    clearTimeout(pressTimer);
+    pressTimer = null;
+    candidate = null;
+  }
+
+  function autoScrollStep() {
+    if (!active) { scrollRaf = 0; return; }
+    const rect = list.getBoundingClientRect();
+    const edge = 44;
+    let delta = 0;
+    if (active.clientY < rect.top + edge) delta = -Math.max(4, Math.round((rect.top + edge - active.clientY) / 4));
+    else if (active.clientY > rect.bottom - edge) delta = Math.max(4, Math.round((active.clientY - (rect.bottom - edge)) / 4));
+    if (delta !== 0) {
+      list.scrollTop += delta;
+      repositionPlaceholder(active.clientY);
+    }
+    scrollRaf = requestAnimationFrame(autoScrollStep);
+  }
+
+  function repositionPlaceholder(clientY) {
+    if (!active) return;
+    const siblings = Array.from(list.querySelectorAll('.favorite-card')).filter(
+      el => el !== active.card && el.dataset.pinned === active.pinned
+    );
+    if (!siblings.length) return;
+    let inserted = false;
+    for (const sibling of siblings) {
+      const box = sibling.getBoundingClientRect();
+      if (clientY < box.top + box.height / 2) {
+        list.insertBefore(active.placeholder, sibling);
+        inserted = true;
+        break;
+      }
+    }
+    if (!inserted) {
+      const last = siblings[siblings.length - 1];
+      last.after(active.placeholder);
+    }
+  }
+
+  function beginDrag(info) {
+    const {card, pointerId, startX, startY} = info;
+    const rect = card.getBoundingClientRect();
+    const sameGroupCount = list.querySelectorAll(`.favorite-card[data-pinned="${card.dataset.pinned}"]`).length;
+    if (sameGroupCount < 2) {
+      clearCandidate();
+      return;
+    }
+    try { window.getSelection()?.removeAllRanges(); } catch {}
+    const placeholder = document.createElement('div');
+    placeholder.className = 'favorite-drop-placeholder';
+    placeholder.style.height = rect.height + 'px';
+    card.after(placeholder);
+    card.classList.add('dragging');
+    card.style.left = rect.left + 'px';
+    card.style.top = rect.top + 'px';
+    card.style.width = rect.width + 'px';
+    list.classList.add('is-dragging');
+    favoriteDragging = true;
+    active = {
+      card,
+      placeholder,
+      pointerId,
+      pinned: card.dataset.pinned,
+      offsetY: startY - rect.top,
+      clientY: startY,
+      beforeKeys: favoriteAuthors.map(a => a.key),
+    };
+    try { list.setPointerCapture(pointerId); } catch {}
+    repositionPlaceholder(startY);
+    scrollRaf = requestAnimationFrame(autoScrollStep);
+  }
+
+  function finishDrag(commit) {
+    if (!active) return;
+    cancelAnimationFrame(scrollRaf);
+    scrollRaf = 0;
+    const {card, placeholder, pointerId, beforeKeys} = active;
+    try { list.releasePointerCapture(pointerId); } catch {}
+    placeholder.replaceWith(card);
+    card.classList.remove('dragging');
+    card.style.left = '';
+    card.style.top = '';
+    card.style.width = '';
+    list.classList.remove('is-dragging');
+    active = null;
+    favoriteDragging = false;
+
+    const afterKeys = Array.from(list.querySelectorAll('.favorite-card')).map(el => el.dataset.key);
+    if (commit && afterKeys.length === beforeKeys.length && afterKeys.some((k, i) => k !== beforeKeys[i])) {
+      const byKey = new Map(favoriteAuthors.map(a => [a.key, a]));
+      favoriteAuthors = afterKeys.map(k => byKey.get(k)).filter(Boolean);
+      Array.from(list.querySelectorAll('.favorite-card')).forEach((el, idx) => { el.dataset.index = String(idx); });
+      void updateFavorites('reorder', {keys: afterKeys});
+    } else if (favoritePendingRender) {
+      renderFavoriteAuthors();
+    }
+  }
+
+  list.addEventListener('pointerdown', event => {
+    if (event.button !== 0) return;
+    const card = event.target.closest('.favorite-card');
+    if (!card) return;
+    const onHandle = Boolean(event.target.closest('.favorite-drag-handle'));
+    if (!onHandle && event.target.closest('button, input, textarea, select, a, label')) return;
+    clearCandidate();
+    candidate = {
+      card,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      onHandle,
+    };
+    if (onHandle) {
+      event.preventDefault();
+    } else {
+      pressTimer = setTimeout(() => {
+        if (candidate && !active) {
+          const info = candidate;
+          candidate = null;
+          beginDrag(info);
+        }
+      }, 220);
+    }
+  });
+
+  window.addEventListener('pointermove', event => {
+    if (active && event.pointerId === active.pointerId) {
+      event.preventDefault();
+      active.clientY = event.clientY;
+      active.card.style.top = (event.clientY - active.offsetY) + 'px';
+      repositionPlaceholder(event.clientY);
+      return;
+    }
+    if (candidate && event.pointerId === candidate.pointerId) {
+      const dx = event.clientX - candidate.startX;
+      const dy = event.clientY - candidate.startY;
+      const dist = Math.hypot(dx, dy);
+      if (candidate.onHandle && dist >= 4) {
+        const info = {...candidate, startX: event.clientX, startY: event.clientY};
+        clearCandidate();
+        beginDrag(info);
+      } else if (!candidate.onHandle && dist > 6) {
+        clearCandidate();
+      }
+    }
+  }, {passive: false});
+
+  window.addEventListener('pointerup', event => {
+    if (candidate && event.pointerId === candidate.pointerId) clearCandidate();
+    if (active && event.pointerId === active.pointerId) finishDrag(true);
+  });
+
+  window.addEventListener('pointercancel', event => {
+    if (candidate && event.pointerId === candidate.pointerId) clearCandidate();
+    if (active && event.pointerId === active.pointerId) finishDrag(false);
+  });
+})();
+
+let coverPollTimer = null;
+let readyCovers = new Set();
+function startCoverPolling() {
+  clearTimeout(coverPollTimer);
+  const job = state.job_id;
+  async function poll() {
+    if (state.job_id !== job) return;
+    let r = null;
+    try {
+      r = await fetch('/api/refresh_covers?job_id=' + encodeURIComponent(job)).then(response => response.json());
+    } catch {}
+    if (state.job_id !== job) return;
+    if (r?.ok) {
+      for (const id of r.ready) {
+        if (readyCovers.has(id)) continue;
+        readyCovers.add(id);
+        const card = document.querySelector('.card[data-id="' + CSS.escape(id) + '"] img.cover-img');
+        if (card) card.src = card.dataset.cover;
+      }
+      if (!r.pending.length) return;
+    }
+    coverPollTimer = setTimeout(poll, 700);
+  }
+  void poll();
+}
+
+// ----- 渲染网格 -----
+const TYPE_LABEL = {
+  video: '视频',
+  image_gallery: '图集',
+  live_photo: '动图',
+};
+function downloadedBadgeHtml(item) {
+  const quality = item.archive_quality || '';
+  let label = '';
+  if (quality.includes('非最高画质')) label = '非最高画质';
+  else if (quality.includes('部分下载')) label = '部分下载';
+  else if (item._downloaded) label = quality.includes('原画质') ? '原画质'
+    : (item.image_quality === 'api_fallback' ? '已下载 · 备用图' : '已下载');
+  if (!label) return '';
+  const matching = label === '原画质';
+  const title = matching ? ' title="已核对平台来源和本地媒体"' : '';
+  return `<div class="downloaded${matching ? ' original-quality' : ''}"${title}>${label}</div>`;
+}
+
+function renderGrid() {
+  const grid = $('#grid');
+  const list = state.items.filter(it => state.filter === 'all' || itemKind(it) === state.filter);
+  if (list.length === 0) {
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="ico">📭</div>当前筛选下无作品</div>';
+    return;
+  }
+  grid.innerHTML = list.map((it, i) => {
+    const iid = String(it.id);
+    const kind = itemKind(it);
+    const title = it.title || '(无标题)';
+    // published_at 兼容：可能是 ISO 字符串、Unix 秒/毫秒时间戳
+    let _pa = it.published_at;
+    if (typeof _pa === 'number' || (typeof _pa === 'string' && /^\d+$/.test(_pa))) {
+      const ts = Number(_pa);
+      _pa = ts > 1e12 ? new Date(ts) : new Date(ts * 1000);
+    } else if (_pa instanceof Date) {
+      // pass
+    } else if (typeof _pa !== 'string') {
+      _pa = '';
+    }
+    const date = (typeof _pa === 'string' ? _pa : (_pa instanceof Date ? _pa.toISOString() : '')).slice(0, 10);
+    const sel = state.selected.has(iid) ? 'selected' : '';
+    const coverUrl = `/api/cover?job_id=${encodeURIComponent(state.job_id)}&item_id=${encodeURIComponent(iid)}`;
+    const downloadedBadge = downloadedBadgeHtml(it);
+    const chosen = state.mediaSelections.get(iid);
+    const openMedia = canLowerQuality(state.platform)
+      ? `<button type="button" class="ghost media-open" data-media-work="${escape(iid)}">${chosen?.length ? '已选 ' + chosen.length + ' 项媒体' : '查看媒体'}</button>` : '';
+    return `<div class="card ${sel}" data-id="${iid}">
+      <div class="cover">
+        <img class="cover-img" loading="${i < 8 ? 'eager' : 'lazy'}" src="${coverUrl}${readyCovers.has(iid) ? '&ready=1' : ''}" data-cover="${coverUrl}&ready=1" alt="${escape(title)}"
+          data-fallback-shown="false"
+          onerror="
+            this.style.display='none';
+            var fb=this.parentNode.querySelector('.placeholder-fallback');
+            if (fb) fb.style.display='flex';
+            this.setAttribute('data-fallback-shown','true');
+          ">
+        <div class="placeholder-fallback" style="display:none">${TYPE_LABEL[kind] || '⬇'}</div>
+        <span class="badge ${kind}">${TYPE_LABEL[kind] || '其它'}</span>
+        ${downloadedBadge}
+        <div class="check">${state.selected.has(iid) ? '✓' : ''}</div>
+      </div>
+      <div class="meta">
+        <div class="title" title="${escape(title)}">${escape(title)}</div>
+        <div class="date">${date}</div>
+        ${openMedia}
+      </div>
+    </div>`;
+  }).join('');
+  bindCardClicks();
+}
+
+function bindCardClicks() {
+  $$('#grid .card').forEach(card => {
+    card.addEventListener('click', () => {
+      if (!hasSelectionWithin(card)) toggleSelect(card.dataset.id);
+    });
+  });
+  $$('#grid [data-media-work]').forEach(button => button.addEventListener('click', event => {
+    event.stopPropagation();
+    void openWorkMedia(button.dataset.mediaWork);
+  }));
+}
+
+let currentMedia = null;
+
+function mediaCheckboxes() { return $$('#work-media-parts input[type=checkbox]'); }
+
+function updateMediaCount() {
+  const boxes = mediaCheckboxes();
+  $('#work-media-count').textContent = boxes.length ? `已选 ${boxes.filter(box => box.checked).length} / ${boxes.length}` : '';
+  $('#work-media-apply').disabled = !boxes.length;
+}
+
+async function openWorkMedia(itemId) {
+  const jobId = state.job_id;
+  const card = state.items.find(item => String(item.id) === itemId);
+  const dialog = $('#work-media-dialog');
+  const request = {jobId, itemId};
+  currentMedia = request;
+  $('#work-media-title').textContent = card?.title || '作品媒体';
+  $('#work-media-status').textContent = '正在读取作品媒体…';
+  $('#work-media-parts').replaceChildren();
+  updateMediaCount();
+  dialog.showModal();
+  const params = new URLSearchParams({job_id: jobId, item_id: itemId});
+  try {
+    const reply = await fetchWithRetry('/api/work-media?' + params, {}, {tries:1});
+    if (!reply.data?.ok) throw new Error(reply.data?.error || '作品媒体暂时无法读取。');
+    if (currentMedia !== request || !dialog.open) return;
+    const {source, parts} = reply.data;
+    const saved = state.mediaSelections.get(itemId);
+    $('#work-media-status').textContent = parts.length ? '' : '这个作品没有可选择的媒体。';
+    for (const part of parts) {
+      const row = document.createElement('article');
+      row.className = 'media-part';
+      const url = '/api/work-media-preview?' + params + '&part=' + encodeURIComponent(part.id);
+      const cover = part.image ? url : '/api/cover?' + params;
+      const label = part.kind === 'live_photo' ? `Live 图 ${part.index}` :
+        part.kind === 'video' ? '视频' : part.cover ? `封面图片 ${part.index}` : `图片 ${part.index}`;
+      row.innerHTML = `<div class="media-visual"><img loading="lazy" src="${escape(cover)}" alt="${label}">${part.playable ? '<button class="ghost media-play" type="button">播放</button>' : ''}</div>
+        <label><input value="${escape(part.id)}" type="checkbox"${(!saved || saved.includes(part.id)) ? ' checked' : ''}><span>${label}</span></label>`;
+      const image = row.querySelector('img');
+      image.addEventListener('error', () => {
+        const unavailable = document.createElement('span');
+        unavailable.className = 'unavailable';
+        unavailable.textContent = state.platform === 'douyin' ? '无水印预览暂不可用' : '预览暂不可用';
+        image.replaceWith(unavailable);
+      }, {once:true});
+      image.addEventListener('click', () => {
+        const box = $('#work-media-lightbox');
+        box.querySelector('img').src = image.src;
+        box.showModal();
+      });
+      row.querySelector('input').addEventListener('change', updateMediaCount);
+      row.querySelector('label').addEventListener('click', event => {
+        if (hasSelectionWithin(event.currentTarget)) event.preventDefault();
+      });
+      row.querySelector('.media-play')?.addEventListener('click', () => {
+        const video = document.createElement('video');
+        video.controls = true;
+        video.autoplay = true;
+        video.playsInline = true;
+        video.src = url + '&motion=1';
+        video.addEventListener('error', () => {
+          const visual = row.querySelector('.media-visual');
+          const link = document.createElement('a');
+          link.textContent = '查看原作品';
+          link.href = source;
+          link.target = '_blank';
+          link.rel = 'noopener';
+          visual.replaceChildren(link);
+        }, {once:true});
+        row.querySelector('.media-visual').replaceChildren(video);
+      });
+      $('#work-media-parts').append(row);
+    }
+    updateMediaCount();
+  } catch (error) {
+    if (currentMedia === request && dialog.open) $('#work-media-status').textContent = error.message;
+  }
+}
+
+for (const [id, checked] of [['#work-media-all', true], ['#work-media-none', false]]) {
+  $(id).addEventListener('click', () => {
+    for (const input of mediaCheckboxes()) input.checked = checked;
+    updateMediaCount();
+  });
+}
+$('#work-media-close').addEventListener('click', () => $('#work-media-dialog').close());
+$('#work-media-dialog').addEventListener('close', () => {
+  for (const video of $$('#work-media-parts video')) video.pause();
+});
+$('#work-media-lightbox-close').addEventListener('click', () => $('#work-media-lightbox').close());
+$('#work-media-apply').addEventListener('click', () => {
+  if (!currentMedia || currentMedia.jobId !== state.job_id) return;
+  const {itemId} = currentMedia;
+  const choices = mediaCheckboxes().filter(box => box.checked).map(box => box.value);
+  if (choices.length) {
+    state.mediaSelections.set(itemId, choices);
+    state.selected.add(itemId);
+  } else {
+    state.mediaSelections.delete(itemId);
+    state.selected.delete(itemId);
+  }
+  $('#work-media-dialog').close();
+  renderGrid();
+  updateCounters();
+});
+
+function toggleSelect(id) {
+  if (state.selected.has(id)) state.selected.delete(id);
+  else state.selected.add(id);
+  updateCounters();
+  const card = $(`.card[data-id="${CSS.escape(id)}"]`);
+  if (card) {
+    card.classList.toggle('selected', state.selected.has(id));
+    card.querySelector('.check').textContent = state.selected.has(id) ? '✓' : '';
+  }
+}
+
+// ----- 计数 + 筛选 -----
+function updateCounters() {
+  $('#selected-count').textContent = state.selected.size;
+  $('#total-count').textContent = state.items.length;
+  const counts = {all: state.items.length, video: 0, image_gallery: 0, live_photo: 0};
+  for (const it of state.items) {
+    const k = itemKind(it);
+    if (counts[k] !== undefined) counts[k]++;
+  }
+  $('#cnt-all').textContent = counts.all;
+  $('#cnt-video').textContent = counts.video;
+  $('#cnt-image').textContent = counts.image_gallery;
+  $('#cnt-live').textContent = counts.live_photo;
+  rebuildWorkDateIndex();
+  syncDownloadButtons();
+}
+
+// ----- 通用近似搜索 + 常看作者搜索 + 作品搜索与日期跳转 -----
+function fuzzyScore(rawQuery, rawTarget, allowFuzzy = true) {
+  const q = String(rawQuery || '').trim().toLowerCase();
+  const t = String(rawTarget || '').trim().toLowerCase();
+  if (!q || !t) return 0;
+  const idx = t.indexOf(q);
+  if (idx !== -1) {
+    return 120 - Math.min(30, idx) + (idx === 0 ? 15 : 0);
+  }
+  const tokens = q.split(/\s+/).filter(Boolean);
+  if (tokens.length > 1 && tokens.every(tok => t.includes(tok))) {
+    return 85;
+  }
+  if (!allowFuzzy || q.length < 2) return 0;
+  // Ordered subsequence approximate match (e.g., "白啊" -> "白斤斤啊", "798928" -> "7989896928")
+  let qi = 0;
+  let first = -1;
+  let last = -1;
+  for (let ti = 0; ti < t.length && qi < q.length; ti++) {
+    if (t[ti] === q[qi]) {
+      if (first === -1) first = ti;
+      last = ti;
+      qi++;
+    }
+  }
+  if (qi === q.length) {
+    const span = last - first + 1;
+    const density = q.length / Math.max(1, span);
+    return Math.round(55 + density * 20);
+  }
+  // Character-overlap tolerance for slight typos when >= 3 chars
+  if (q.length >= 3) {
+    let hits = 0;
+    const seen = new Set();
+    for (const ch of q) {
+      if (ch.trim() && !seen.has(ch) && t.includes(ch)) {
+        seen.add(ch);
+        hits++;
+      }
+    }
+    const uniqueQueryLen = new Set([...q].filter(c => c.trim())).size;
+    if (uniqueQueryLen > 0 && hits / uniqueQueryLen >= 0.65) {
+      return Math.round(35 + (hits / uniqueQueryLen) * 15);
+    }
+  }
+  return 0;
+}
+
+function scrollToFavoriteAuthor(key) {
+  const list = $('#favorite-authors');
+  const card = list?.querySelector(`.favorite-card[data-key="${CSS.escape(key)}"]`);
+  if (!card) return;
+  const targetTop = Math.max(0, card.offsetTop - list.offsetTop - (list.clientHeight - card.offsetHeight) / 2);
+  list.scrollTo({top: targetTop, behavior: 'smooth'});
+  card.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+  card.classList.remove('search-hit');
+  void card.offsetWidth;
+  card.classList.add('search-hit');
+  card.addEventListener('animationend', () => card.classList.remove('search-hit'), {once: true});
+}
+
+(() => {
+  const input = $('#favorite-search');
+  const clearBtn = $('#favorite-search-clear');
+  const dropdown = $('#favorite-search-results');
+  if (!input || !dropdown) return;
+  let lastMatches = [];
+
+  function hideDropdown() {
+    dropdown.hidden = true;
+  }
+
+  function renderMatches() {
+    const q = input.value.trim();
+    clearBtn.hidden = !q;
+    if (!q || !favoriteAuthors.length) {
+      lastMatches = [];
+      hideDropdown();
+      return;
+    }
+    const scored = [];
+    favoriteAuthors.forEach((author, index) => {
+      const fields = [
+        ['ID', author.id],
+        ['账号', author.account],
+        ['备注', author.note],
+        ['名称', author.name],
+      ];
+      let bestScore = 0;
+      let matchedLabel = '';
+      for (const [label, value] of fields) {
+        const s = fuzzyScore(q, value, q.length >= 2);
+        if (s > bestScore) {
+          bestScore = s;
+          matchedLabel = label;
+        }
+      }
+      if (bestScore > 0) {
+        scored.push({author, index, score: bestScore, matchedLabel});
+      }
+    });
+    scored.sort((a, b) => b.score - a.score || a.index - b.index);
+    lastMatches = scored.slice(0, 12);
+    if (!lastMatches.length) {
+      dropdown.innerHTML = '<div class="search-empty">未找到匹配的常看作者</div>';
+      dropdown.hidden = false;
+      return;
+    }
+    dropdown.innerHTML = lastMatches.map(({author, index, matchedLabel}) => {
+      const plat = PLATFORM_LABEL[author.platform] || author.platform;
+      const platClass = ['douyin', 'xiaohongshu', 'weibo'].includes(author.platform) ? author.platform : '';
+      const meta = [
+        author.account ? `账号 ${author.account}` : '',
+        author.id ? `ID ${author.id}` : '',
+        author.note ? `备注：${author.note}` : '',
+      ].filter(Boolean).join(' · ');
+      return `<button type="button" class="search-option" role="option" data-fav-key="${escape(author.key)}">
+        <span class="favorite-platform ${platClass}">${plat}</span>
+        <span class="search-option-main">
+          <span class="search-option-title">${escape(author.name || '作者')}</span>
+          <span class="search-option-sub">[${matchedLabel}] ${escape(meta)}</span>
+        </span>
+        <span class="search-option-rank">#${index + 1}</span>
+      </button>`;
+    }).join('');
+    dropdown.hidden = false;
+  }
+
+  input.addEventListener('input', renderMatches);
+  input.addEventListener('focus', () => {
+    if (input.value.trim()) renderMatches();
+  });
+  input.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      hideDropdown();
+      return;
+    }
+    if (event.key === 'Enter' && lastMatches.length) {
+      event.preventDefault();
+      hideDropdown();
+      scrollToFavoriteAuthor(lastMatches[0].author.key);
+    }
+  });
+  clearBtn.addEventListener('click', () => {
+    input.value = '';
+    clearBtn.hidden = true;
+    hideDropdown();
+    input.focus();
+  });
+  dropdown.addEventListener('click', event => {
+    const opt = event.target.closest('[data-fav-key]');
+    if (!opt) return;
+    hideDropdown();
+    scrollToFavoriteAuthor(opt.dataset.favKey);
+  });
+  document.addEventListener('pointerdown', event => {
+    if (!event.target.closest('#favorite-search-box')) hideDropdown();
+  });
+})();
+
+function extractWorkDateStr(item) {
+  let raw = item?.published_at;
+  if (raw === null || raw === undefined || raw === '') return '';
+  if (typeof raw === 'number' || (typeof raw === 'string' && /^\d+$/.test(raw.trim()))) {
+    const ts = Number(raw);
+    const d = new Date(ts > 1e12 ? ts : ts * 1000);
+    if (!Number.isNaN(d.getTime())) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+  }
+  const s = String(raw).trim();
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  const ym = s.match(/^(\d{4})-(\d{2})$/);
+  if (ym) return `${ym[1]}-${ym[2]}-01`;
+  return '';
+}
+
+function flashWorkCards(ids, scrollId = null) {
+  const idList = (Array.isArray(ids) ? ids : [ids]).map(String).filter(Boolean);
+  if (!idList.length) return;
+  const targetId = String(scrollId || idList[0]);
+  // Ensure the target card is visible even if a category chip filtered it out.
+  let targetCard = document.querySelector(`.card[data-id="${CSS.escape(targetId)}"]`);
+  if (!targetCard && state.filter !== 'all') {
+    state.filter = 'all';
+    $$('.chip').forEach(c => c.classList.toggle('active', c.dataset.kind === 'all'));
+    renderGrid();
+    targetCard = document.querySelector(`.card[data-id="${CSS.escape(targetId)}"]`);
+  }
+  if (!targetCard) return;
+  targetCard.scrollIntoView({behavior: 'smooth', block: 'center'});
+  for (const id of idList) {
+    const card = document.querySelector(`.card[data-id="${CSS.escape(id)}"]`);
+    if (!card) continue;
+    card.classList.remove('flash-yellow');
+    void card.offsetWidth;
+    card.classList.add('flash-yellow');
+    card.addEventListener('animationend', () => card.classList.remove('flash-yellow'), {once: true});
+  }
+}
+
+(() => {
+  const input = $('#work-search');
+  const clearBtn = $('#work-search-clear');
+  const dropdown = $('#work-search-results');
+  if (!input || !dropdown) return;
+  let lastMatches = [];
+
+  function hideDropdown() {
+    dropdown.hidden = true;
+  }
+
+  function renderMatches() {
+    const q = input.value.trim();
+    clearBtn.hidden = !q;
+    if (!q || !state.items.length) {
+      lastMatches = [];
+      hideDropdown();
+      return;
+    }
+    const scored = [];
+    state.items.forEach((it, index) => {
+      const title = String(it.title || '');
+      const sTitle = fuzzyScore(q, title, q.length >= 2);
+      const sId = fuzzyScore(q, String(it.id || ''), false);
+      const score = Math.max(sTitle, sId);
+      if (score > 0) scored.push({item: it, index, score});
+    });
+    scored.sort((a, b) => b.score - a.score || a.index - b.index);
+    lastMatches = scored.slice(0, 15);
+    if (!lastMatches.length) {
+      dropdown.innerHTML = '<div class="search-empty">未找到匹配的作品名称或文案</div>';
+      dropdown.hidden = false;
+      return;
+    }
+    dropdown.innerHTML = lastMatches.map(({item}) => {
+      const kind = itemKind(item);
+      const label = TYPE_LABEL[kind] || '作品';
+      const date = extractWorkDateStr(item);
+      return `<button type="button" class="search-option" role="option" data-work-id="${escape(String(item.id))}">
+        <span class="favorite-platform">${label}</span>
+        <span class="search-option-main">
+          <span class="search-option-title">${escape(item.title || '(无标题)')}</span>
+          <span class="search-option-sub">${escape(date || '日期未提供')}</span>
+        </span>
+      </button>`;
+    }).join('');
+    dropdown.hidden = false;
+  }
+
+  input.addEventListener('input', renderMatches);
+  input.addEventListener('focus', () => {
+    if (input.value.trim()) renderMatches();
+  });
+  input.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      hideDropdown();
+      return;
+    }
+    if (event.key === 'Enter' && lastMatches.length) {
+      event.preventDefault();
+      hideDropdown();
+      flashWorkCards(lastMatches[0].item.id);
+    }
+  });
+  clearBtn.addEventListener('click', () => {
+    input.value = '';
+    clearBtn.hidden = true;
+    hideDropdown();
+    input.focus();
+  });
+  dropdown.addEventListener('click', event => {
+    const opt = event.target.closest('[data-work-id]');
+    if (!opt) return;
+    hideDropdown();
+    flashWorkCards(opt.dataset.workId);
+  });
+  document.addEventListener('pointerdown', event => {
+    if (!event.target.closest('#work-search-box')) hideDropdown();
+  });
+})();
+
+let workDateIndex = {years: [], byYear: new Map(), byMonth: new Map(), byDay: new Map()};
+let selectedDateJump = '';
+
+function rebuildWorkDateIndex() {
+  const byYear = new Map();
+  const byMonth = new Map();
+  const byDay = new Map();
+  for (const it of state.items) {
+    const d = extractWorkDateStr(it);
+    if (!d) continue;
+    const id = String(it.id);
+    const y = d.slice(0, 4);
+    const ym = d.slice(0, 7);
+    if (!byYear.has(y)) byYear.set(y, []);
+    byYear.get(y).push(id);
+    if (!byMonth.has(ym)) byMonth.set(ym, []);
+    byMonth.get(ym).push(id);
+    if (!byDay.has(d)) byDay.set(d, []);
+    byDay.get(d).push(id);
+  }
+  const years = [...byYear.keys()].sort((a, b) => b.localeCompare(a));
+  workDateIndex = {years, byYear, byMonth, byDay};
+  const btn = $('#btn-work-date');
+  if (btn) btn.disabled = years.length === 0;
+  const yearSel = $('#work-date-year');
+  const monthSel = $('#work-date-month');
+  if (!yearSel || !monthSel) return;
+  if (!years.length) {
+    yearSel.innerHTML = '<option value="">无日期</option>';
+    monthSel.innerHTML = '<option value="">无月份</option>';
+    $('#work-date-calendar').innerHTML = '';
+    return;
+  }
+  const prevYear = yearSel.value;
+  yearSel.innerHTML = years.map(y =>
+    `<option value="${y}">${y}年 (${byYear.get(y).length}件)</option>`
+  ).join('');
+  yearSel.value = years.includes(prevYear) ? prevYear : years[0];
+  populateWorkDateMonths();
+}
+
+function populateWorkDateMonths() {
+  const yearSel = $('#work-date-year');
+  const monthSel = $('#work-date-month');
+  const year = yearSel.value;
+  if (!year) return;
+  const prevMonth = monthSel.value;
+  const monthsWithWorks = [];
+  monthSel.innerHTML = Array.from({length: 12}, (_, i) => {
+    const m = String(i + 1).padStart(2, '0');
+    const ym = `${year}-${m}`;
+    const count = (workDateIndex.byMonth.get(ym) || []).length;
+    if (count > 0) monthsWithWorks.push(m);
+    return `<option value="${m}">${i + 1}月${count ? ` (${count}件)` : ''}</option>`;
+  }).join('');
+  if (prevMonth && (workDateIndex.byMonth.get(`${year}-${prevMonth}`) || []).length) {
+    monthSel.value = prevMonth;
+  } else if (monthsWithWorks.length) {
+    monthSel.value = monthsWithWorks[monthsWithWorks.length - 1];
+  } else {
+    monthSel.value = '01';
+  }
+  renderWorkDateCalendar();
+}
+
+function renderWorkDateCalendar() {
+  const year = Number($('#work-date-year').value);
+  const month = Number($('#work-date-month').value);
+  const grid = $('#work-date-calendar');
+  if (!year || !month || !grid) return;
+  const ym = `${year}-${String(month).padStart(2, '0')}`;
+  const firstDow = new Date(year, month - 1, 1).getDay();
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const cells = [];
+  for (let i = 0; i < firstDow; i++) {
+    cells.push('<span class="date-cal-day" aria-hidden="true"></span>');
+  }
+  let activeDays = 0;
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dayStr = `${ym}-${String(day).padStart(2, '0')}`;
+    const ids = workDateIndex.byDay.get(dayStr) || [];
+    const has = ids.length > 0;
+    if (has) activeDays++;
+    const sel = selectedDateJump === dayStr ? ' selected' : '';
+    const title = has ? `${dayStr} 共 ${ids.length} 件作品，点击跳转` : `${dayStr} 无作品`;
+    cells.push(`<button type="button" class="date-cal-day${has ? ' has-works' : ''}${sel}" ${has ? `data-jump-day="${dayStr}"` : 'disabled'} title="${title}">${day}</button>`);
+  }
+  grid.innerHTML = cells.join('');
+  const monthCount = (workDateIndex.byMonth.get(ym) || []).length;
+  $('#work-date-summary').textContent = monthCount
+    ? `${ym} 共 ${monthCount} 件（${activeDays} 天有更新）`
+    : `${ym} 暂无盘点作品`;
+}
+
+(() => {
+  const btn = $('#btn-work-date');
+  const popover = $('#work-date-popover');
+  const yearSel = $('#work-date-year');
+  const monthSel = $('#work-date-month');
+  const cal = $('#work-date-calendar');
+  if (!btn || !popover) return;
+
+  function closePopover() {
+    popover.hidden = true;
+    btn.classList.remove('active');
+    btn.setAttribute('aria-expanded', 'false');
+  }
+
+  btn.addEventListener('click', () => {
+    if (!workDateIndex.years.length) {
+      toast('当前作品列表没有可筛选的日期信息', 'info');
+      return;
+    }
+    const opening = popover.hidden;
+    popover.hidden = !opening;
+    btn.classList.toggle('active', opening);
+    btn.setAttribute('aria-expanded', opening ? 'true' : 'false');
+    if (opening) renderWorkDateCalendar();
+  });
+  $('#btn-work-date-close').addEventListener('click', closePopover);
+  yearSel.addEventListener('change', populateWorkDateMonths);
+  monthSel.addEventListener('change', renderWorkDateCalendar);
+
+  $('#btn-jump-year').addEventListener('click', () => {
+    const y = yearSel.value;
+    const ids = workDateIndex.byYear.get(y) || [];
+    if (!ids.length) { toast(`${y} 年暂无作品`, 'info'); return; }
+    selectedDateJump = '';
+    btn.textContent = `📅 ${y}年`;
+    closePopover();
+    flashWorkCards(ids[0]);
+    toast(`已跳转到 ${y} 年的作品（共 ${ids.length} 件）`, 'success', 2000);
+  });
+
+  $('#btn-jump-month').addEventListener('click', () => {
+    const ym = `${yearSel.value}-${monthSel.value}`;
+    const ids = workDateIndex.byMonth.get(ym) || [];
+    if (!ids.length) { toast(`${ym} 暂无作品`, 'info'); return; }
+    selectedDateJump = '';
+    btn.textContent = `📅 ${ym}`;
+    closePopover();
+    flashWorkCards(ids[0]);
+    toast(`已跳转到 ${ym} 的作品（共 ${ids.length} 件）`, 'success', 2000);
+  });
+
+  cal.addEventListener('click', event => {
+    const dayBtn = event.target.closest('[data-jump-day]');
+    if (!dayBtn) return;
+    const dayStr = dayBtn.dataset.jumpDay;
+    const ids = workDateIndex.byDay.get(dayStr) || [];
+    if (!ids.length) return;
+    selectedDateJump = dayStr;
+    btn.textContent = `📅 ${dayStr}`;
+    closePopover();
+    flashWorkCards(ids, ids[0]);
+    toast(`已定位到 ${dayStr} 的作品（共 ${ids.length} 件）`, 'success', 2200);
+  });
+
+  document.addEventListener('pointerdown', event => {
+    if (!popover.hidden && !event.target.closest('#work-date-wrap')) closePopover();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !popover.hidden) closePopover();
+  });
+})();
+
+$$('.chip').forEach(chip => chip.addEventListener('click', () => {
+  if (hasSelectionWithin(chip)) return;
+  $$('.chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  state.filter = chip.dataset.kind;
+  renderGrid();
+}));
+
+// ----- 全选 / 全不选 / 反选 -----
+$('#btn-select-all').addEventListener('click', () => {
+  const list = state.items.filter(it => state.filter === 'all' || itemKind(it) === state.filter);
+  list.forEach(it => state.selected.add(String(it.id)));
+  refreshSelection();
+});
+$('#btn-select-none').addEventListener('click', () => {
+  const list = state.items.filter(it => state.filter === 'all' || itemKind(it) === state.filter);
+  list.forEach(it => state.selected.delete(String(it.id)));
+  refreshSelection();
+});
+$('#btn-select-invert').addEventListener('click', () => {
+  const list = state.items.filter(it => state.filter === 'all' || itemKind(it) === state.filter);
+  const sel = new Set(state.selected);
+  state.selected.clear();
+  list.forEach(it => {
+    if (!sel.has(String(it.id))) state.selected.add(String(it.id));
+  });
+  refreshSelection();
+});
+function refreshSelection() {
+  updateCounters();
+  $$('#grid .card').forEach(card => {
+    const isSel = state.selected.has(card.dataset.id);
+    card.classList.toggle('selected', isSel);
+    card.querySelector('.check').textContent = isSel ? '✓' : '';
+  });
+}
+
+// ----- 下载 -----
+$('#btn-download').addEventListener('click', download);
+function syncDownloadButtons() {
+  const busy = state.submitting || state.downloading;
+  $('#btn-download').disabled = busy || state.selected.size === 0;
+  $('#btn-download').textContent = state.submitting ? '提交中…'
+    : (busy ? (state.progressState?.status === 'stalled' ? '下载超时' : '下载中…') : '下载选中作品');
+  $('#btn-inspect').disabled = busy || Boolean(state.inspecting);
+  $('#btn-guest-inspect').disabled = $('#btn-inspect').disabled;
+  renderFavoriteButtons();
+  $('#btn-set-archive-root').disabled = busy;
+  const retryAll = $('#btn-history-retry-all');
+  retryAll.disabled = busy || !(Number(retryAll.dataset.total) > 0);
+  for (const button of document.querySelectorAll('[data-history-retry]')) button.disabled = busy;
+  updateFailureRetryButton();
+}
+
+async function download() {
+  if (state.submitting || state.downloading) return;
+  if (!state.job_id || !state.selected.size) {
+    toast('请先勾选作品', 'error');
+    return;
+  }
+  state.submitting = true;
+  syncDownloadButtons();
+  $('#panel-progress').style.display = '';
+  $('#progress-actions').style.display = 'none';
+  $('#progress-message').textContent = '正在提交下载任务…';
+  $('#progress-bar').removeAttribute('value');
+  $('#panel-progress').scrollIntoView({behavior:'smooth', block:'center'});
+  try {
+    const response = await fetchWithRetry('/api/download', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({job_id: state.job_id, ids: [...state.selected],
+        media: Object.fromEntries([...state.mediaSelections].filter(([id]) => state.selected.has(id)))})
+    }, DOWNLOAD_REQUEST);
+    if (!response.data?.ok) throw new Error(response.data?.error || '服务暂未确认任务。');
+    renderProgress(response.data.state);
+    pollProgress();
+  } catch (e) {
+    $('#progress-message').textContent = e.message;
+    $('#progress-bar').value = 0;
+    toast(e.message, 'error');
+  } finally {
+    state.submitting = false;
+    syncDownloadButtons();
+  }
+}
+
+function renderProgress(s) {
+  state.progressState = s;
+  state.downloading = Boolean(s.running);
+  syncDownloadButtons();
+  $('#progress-message').textContent = s.message || '';
+  const completed = s.completed || 0;
+  const failed = s.failed || 0;
+  const pct = Math.min(100, Math.round(100 * (completed + failed) / Math.max(1, s.total || 0)));
+  $('#progress-bar').value = pct;
+  $('#progress-percent').textContent = pct + '%';
+  $('#stat-completed').textContent = completed;
+  $('#stat-failed').textContent = failed;
+  $('#stat-processing').textContent = s.processing || 0;
+  $('#progress-detail').style.display = '';
+  $('#btn-resume').hidden = !s.job_id || !['interrupted', 'waiting_for_reauthentication', 'stalled'].includes(s.status);
+  $('#btn-resume').disabled = Boolean(s.running);
+  const transferred = ((s.transferred_bytes || 0) / 1048576).toFixed(1);
+  const rate = s.bytes_per_second >= 1048576
+    ? (s.bytes_per_second / 1048576).toFixed(1) + ' MB/s'
+    : Math.round((s.bytes_per_second || 0) / 1024) + ' KB/s';
+  $('#progress-transfer').textContent = '已处理 ' + (completed + failed) + '/' + (s.total || 0)
+    + ' 件 · 已传输 ' + transferred + ' MB' + (s.running ? ' · ' + rate : '');
+  if (s.job_id && s.archive_root && s.finished && completed > 0) {
+    const platform = PLATFORM_LABEL[s.platform] || s.platform || PLATFORM_LABEL[state.platform];
+    const folder = s.saved_folder === undefined && s.author_folder
+      ? s.author_folder.replaceAll('/', '\\') : 'content\\' + platform;
+    $('#progress-saved-path').textContent = s.saved_folder || s.archive_root + '\\' + folder;
+    $('#progress-actions').style.display = '';
+  } else {
+    $('#progress-actions').style.display = 'none';
+  }
+}
+
+function pollProgress() {
+  clearTimeout(state.polling);
+  let lastUpdate = performance.now();
+  let historyKey = '';
+  let completed = 0;
+  let refreshTimer;
+  async function poll() {
+    let r = null;
+    try {
+      r = (await fetchWithRetry('/api/progress', {}, {tries:1, timeout:5000})).data;
+    } catch {}
+    if (r?.ok) {
+      const s = r.state;
+      lastUpdate = performance.now();
+      renderProgress(s);
+      const key = [s.job_id, s.completed, s.failed, s.finished].join(':');
+      if (key !== historyKey) {
+        historyKey = key;
+        void loadDownloadHistory();
+        if (authorHistoryJob) void loadDownloadHistory('author');
+      }
+      if (s.completed > completed && !refreshTimer && state.job_id && state.items.length) {
+        refreshTimer = setTimeout(() => {
+          refreshTimer = null;
+          void refreshCovers({badgesOnly: true});
+        }, 1000);
+      }
+      completed = s.completed || 0;
+      if (s.finished && !s.running) {
+        clearTimeout(refreshTimer);
+        state.polling = null;
+        void loadFailures(s.job_id);
+        if (state.job_id && state.items.length) void refreshCovers();
+        return;
+      }
+    } else if (performance.now() - lastUpdate >= DOWNLOAD_TIMEOUT_MS && state.progressState?.running) {
+      renderProgress({...state.progressState, status:'stalled',
+        message:'下载进度查询超时（60 秒）。正在重新连接本地服务…'});
+    }
+    state.polling = setTimeout(poll, 600);
+  }
+  void poll();
+}
+
+async function refreshCovers({badgesOnly = false} = {}) {
+  const job = state.job_id;
+  try {
+    const r = await fetch('/api/inventory?job_id=' + encodeURIComponent(job)).then(response => response.json());
+    if (r.ok && state.job_id === job) {
+      state.items = r.items || [];
+      if (badgesOnly) {
+        const items = new Map(state.items.map(item => [String(item.id), item]));
+        for (const card of $$('#grid .card')) {
+          const badge = downloadedBadgeHtml(items.get(card.dataset.id) || {});
+          const prior = card.querySelector('.downloaded');
+          if (prior?.outerHTML === badge) continue;
+          prior?.remove();
+          if (badge) card.querySelector('.cover').insertAdjacentHTML('beforeend', badge);
+        }
+      } else renderGrid();
+      updateCounters();
+    }
+  } catch {}
+}
+
+// ----- 打开下载目录 -----
+// 打开本次任务显示的保存目录。
+$('#btn-open-folder').addEventListener('click', async () => {
+  const target = $('#progress-saved-path').textContent;
+  try {
+    const r = await fetch('/api/open_folder', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({path: target, job_id: state.progressState?.job_id, platform: state.progressState?.platform})
+    }).then(x => x.json());
+    if (!r.ok) toast('打开失败：' + (r.error || '未知错误'), 'error');
+  } catch (e) { toast('出错：' + e.message, 'error'); }
+});
+
+// ----- 导入 Cookie -----
+$('#btn-import-cookie').addEventListener('click', async () => {
+  const platform = $('#cookie-platform').value;
+  const browser = $('#cookie-browser').value;
+  const btn = $('#btn-import-cookie');
+  btn.disabled = true; btn.textContent = '导入中…';
+  try {
+    const r = await fetch('/api/import_cookie', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({platform, browser})
+    }).then(x => x.json());
+    if (r.ok) toast('Cookie 导入成功：' + (r.message || `${platform} / ${browser}`), 'success');
+    else toast('导入失败：' + (r.error || '未知错误'), 'error');
+  } catch (e) {
+    toast('导入出错：' + e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = '导入浏览器 Cookie';
+  }
+});
+
+function escape(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// 初始化
+selfcheck();
+loadArchiveRoot();
+
+// ----- 下载路径选择器 -----
+let availableDrives = [];
+let currentBrowseDir = '';
+let savedArchiveBase = '';
+
+function extractDrivePrefix(pathValue) {
+  const m = String(pathValue || '').trim().match(/^([A-Za-z]):[\\/]?/);
+  return m ? m[1].toUpperCase() + ':\\' : '';
+}
+
+function renderArchivePreview(basePath, platformPaths) {
+  const chips = $('#archive-preview-chips');
+  if (!chips) return;
+  const clean = String(basePath || '').trim().replace(/[\\/]+$/, '');
+  if (!clean) {
+    chips.innerHTML = '';
+    return;
+  }
+  const sep = clean.includes('/') && !clean.includes('\\') ? '/' : '\\';
+  const rows = [
+    ['抖音', platformPaths?.douyin || `${clean}${sep}抖音`],
+    ['小红书', platformPaths?.xiaohongshu || `${clean}${sep}小红书`],
+    ['微博', platformPaths?.weibo || `${clean}${sep}微博`],
+  ];
+  chips.innerHTML = rows.map(([label, dir]) =>
+    `<span class="archive-preview-chip"><b>${label}</b> ${escape(dir)}\\作者（账号）</span>`
+  ).join('');
+}
+
+function syncDriveControls(pathValue) {
+  const drive = extractDrivePrefix(pathValue);
+  const select = $('#archive-drive');
+  if (select && availableDrives.length) {
+    if (drive && availableDrives.some(d => d.path.toUpperCase() === drive)) {
+      select.value = availableDrives.find(d => d.path.toUpperCase() === drive).path;
+    }
+  }
+  for (const btn of $$('#folder-drives .folder-drive-btn')) {
+    btn.classList.toggle('active', Boolean(drive) && btn.dataset.drive.toUpperCase() === drive);
+  }
+}
+
+function renderDriveButtons(drives, currentPath) {
+  if (Array.isArray(drives) && drives.length) {
+    availableDrives = drives;
+    const select = $('#archive-drive');
+    if (select) {
+      const prev = select.value;
+      select.innerHTML = drives.map(d => `<option value="${escape(d.path)}">${escape(d.name)}</option>`).join('');
+      if (prev && drives.some(d => d.path === prev)) select.value = prev;
+    }
+  }
+  const bar = $('#folder-drives');
+  if (!bar) return;
+  if (!availableDrives.length) {
+    bar.style.display = 'none';
+    return;
+  }
+  bar.style.display = '';
+  bar.innerHTML = '<span class="folder-drives-label">切换盘符：</span>' + availableDrives.map(d =>
+    `<button type="button" class="folder-drive-btn" data-drive="${escape(d.path)}">💽 ${escape(d.name)}</button>`
+  ).join('');
+  bar.querySelectorAll('.folder-drive-btn').forEach(btn => {
+    btn.addEventListener('click', () => void browseFolder(btn.dataset.drive));
+  });
+  syncDriveControls(currentPath || $('#archive-root').value);
+}
+
+async function loadDrives() {
+  try {
+    const r = await fetch('/api/browse_folder?path=__drives__').then(x => x.json());
+    if (r?.ok && Array.isArray(r.drives || r.entries)) {
+      renderDriveButtons(r.drives || r.entries, $('#archive-root').value);
+    }
+  } catch {}
+}
+
+async function loadArchiveRoot() {
+  try {
+    const r = await fetch('/api/archive_root').then(x => x.json());
+    if (r?.ok) {
+      const base = r.base_path || r.archive_root || '';
+      savedArchiveBase = base;
+      $('#archive-root').value = base;
+      const locked = Boolean(r.fixed);
+      $('#archive-root').readOnly = locked;
+      $('#archive-drive').disabled = locked;
+      $('#btn-set-archive-root').hidden = locked;
+      $('#btn-browse-folder').hidden = locked;
+      if (locked) $('#folder-browser').style.display = 'none';
+      $('#archive-hint').textContent = locked
+        ? '当前目录由运行环境指定；作品仍按平台与「作者（账号）」归档。'
+        : '选择盘符和文件夹并保存后，下载时自动建立对应平台子文件夹（微博 / 小红书 / 抖音），其下再按「作者（账号）」保存；重启后始终记忆下载历史与所属作者目录。';
+      renderArchivePreview(base, r.platform_paths);
+      syncDriveControls(base);
+      firstLaunchPathPending = !locked && r.configured === false;
+      maybePromptFirstLaunchPath();
+    }
+  } catch (e) {}
+}
+
+function maybePromptFirstLaunchPath() {
+  if (!disclaimerAccepted || !firstLaunchPathPending || firstLaunchPathPrompted) return;
+  const dialog = $('#first-path-dialog');
+  if (!dialog || dialog.open) return;
+  firstLaunchPathPrompted = true;
+  const defEl = $('#first-path-default');
+  if (defEl) defEl.textContent = savedArchiveBase || $('#archive-root')?.value || '';
+  dialog.showModal();
+}
+
+$('#btn-first-path-default')?.addEventListener('click', async () => {
+  const dialog = $('#first-path-dialog');
+  const target = savedArchiveBase || $('#archive-root')?.value?.trim() || '';
+  if (target) {
+    try {
+      const r = await fetchWithRetry('/api/archive_root', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({path: target})
+      }, {tries: 2});
+      if (r.ok && r.data?.ok) {
+        const confirmed = r.data.base_path || target;
+        firstLaunchPathPending = false;
+        savedArchiveBase = confirmed;
+        $('#archive-root').value = confirmed;
+        renderArchivePreview(confirmed, r.data.platform_paths);
+        syncDriveControls(confirmed);
+        toast('已确认默认下载路径：' + confirmed, 'success', 3500);
+      }
+    } catch {}
+  }
+  if (dialog?.open) dialog.close();
+});
+
+$('#btn-first-path-custom')?.addEventListener('click', () => {
+  const dialog = $('#first-path-dialog');
+  if (dialog?.open) dialog.close();
+  firstLaunchPathPending = false;
+  const input = $('#archive-root');
+  if (input) input.scrollIntoView({behavior: 'smooth', block: 'center'});
+  const browseBtn = $('#btn-browse-folder');
+  if (browseBtn && $('#folder-browser')?.style.display === 'none') {
+    browseBtn.click();
+  }
+});
+// 带重试的 fetch（应对 server 重启期间 time_wait 偶发的 Failed to fetch）
+async function fetchWithRetry(url, opts = {}, {tries = 4, delay = 600, timeout, timeoutMessage = '请求超时，请重试。'} = {}) {
+  if (opts.method && opts.method !== 'GET') {
+    const durable = ['/api/inspect','/api/download','/api/retry-failures'].includes(url);
+    if (durable) opts = {...opts, headers:{...opts.headers, 'X-Request-ID': crypto.randomUUID()}};
+    else tries = 1;
+  }
+  const duration = timeout ?? (url.startsWith('/api/work-media?') ? 90000 : 30000);
+  const deadline = performance.now() + duration;
+  let lastErr;
+  for (let i = 0; i < tries; i++) {
+    try {
+      const controller = new AbortController();
+      const left = deadline - performance.now();
+      if (left <= 0) throw new Error(timeoutMessage);
+      const timer = setTimeout(() => controller.abort(), left);
+      let r, t;
+      try {
+        r = await fetch(url, {...opts, signal: controller.signal});
+        t = await r.text();
+      } finally { clearTimeout(timer); }
+      try { return {ok: r.ok, data: JSON.parse(t), raw: t, status: r.status}; }
+      catch { return {ok: r.ok, data: null, raw: t, status: r.status}; }
+    } catch (e) {
+      if (e.name === 'AbortError' || performance.now() >= deadline) throw new Error(timeoutMessage);
+      lastErr = e;
+      if (i < tries - 1) await new Promise(r => setTimeout(r, Math.min(delay * (i + 1), deadline - performance.now())));
+    }
+  }
+  throw lastErr;
+}
+
+$('#archive-drive').addEventListener('change', () => {
+  const drive = $('#archive-drive').value;
+  if (!drive) return;
+  const current = $('#archive-root').value.trim();
+  const subpath = current.replace(/^[A-Za-z]:[\\/]*/, '').trim();
+  const isUserProfilePath = /^users[\\/]/i.test(subpath);
+  const nextPath = (!subpath || isUserProfilePath) ? drive + 'WorksDownloader' : drive + subpath;
+  $('#archive-root').value = nextPath;
+  renderArchivePreview(nextPath);
+  if ($('#folder-browser').style.display !== 'none') {
+    void browseFolder(drive);
+  } else {
+    $('#folder-browser').style.display = '';
+    void browseFolder(drive);
+  }
+});
+
+$('#archive-root').addEventListener('input', () => {
+  const val = $('#archive-root').value.trim();
+  renderArchivePreview(val);
+  syncDriveControls(val);
+});
+
+$('#btn-open-archive-base').addEventListener('click', async () => {
+  const target = savedArchiveBase || $('#archive-root').value.trim();
+  try {
+    const r = await fetch('/api/open_folder', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({path: target})
+    }).then(x => x.json());
+    if (!r.ok) toast('打开目录失败：' + (r.error || '目录尚未创建，请先保存路径'), 'error');
+  } catch (e) { toast('出错：' + e.message, 'error'); }
+});
+
+$('#btn-set-archive-root').addEventListener('click', async () => {
+  const p = $('#archive-root').value.trim();
+  if (!p) { toast('请输入或选择下载目录', 'error'); return; }
+  const btn = $('#btn-set-archive-root');
+  btn.disabled = true; btn.textContent = '保存中…';
+  try {
+    const r = await fetchWithRetry('/api/archive_root', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({path: p})
+    });
+    if (r.ok && r.data && r.data.ok) {
+      const saved = r.data.base_path || r.data.archive_root;
+      savedArchiveBase = saved;
+      $('#archive-root').value = saved;
+      renderArchivePreview(saved, r.data.platform_paths);
+      syncDriveControls(saved);
+      $('#folder-browser').style.display = 'none';
+      toast('下载路径已保存：' + saved + '（将自动创建平台与作者子目录）', 'success', 4500);
+      setTimeout(() => void loadDownloadHistory(), 400);
+    }
+    else toast('保存失败：' + ((r.data && r.data.error) || r.raw || '未知错误'), 'error');
+  } catch (e) {
+    toast('出错：' + (e.message || 'Failed to fetch') + '（请检查 server 是否运行）', 'error');
+  }
+  finally { btn.disabled = false; btn.textContent = '保存路径'; }
+});
+
+function pickArchiveCandidate(pathValue) {
+  $('#archive-root').value = pathValue;
+  renderArchivePreview(pathValue);
+  syncDriveControls(pathValue);
+  const saveBtn = $('#btn-set-archive-root');
+  saveBtn.classList.add('needs-attention');
+  toast('已选择 ' + pathValue + ' —— 请点击「保存路径」生效', 'success', 3000);
+  saveBtn.scrollIntoView({behavior: 'smooth', block: 'center'});
+  setTimeout(() => saveBtn.classList.remove('needs-attention'), 4000);
+}
+
+$('#btn-browse-folder').addEventListener('click', async () => {
+  const browser = $('#folder-browser');
+  if (browser.style.display !== 'none') {
+    browser.style.display = 'none';
+    return;
+  }
+  browser.style.display = '';
+  let startPath = $('#archive-root').value.trim();
+  try {
+    if (startPath) {
+      const r = await fetch(`/api/browse_folder?path=${encodeURIComponent(startPath)}`).then(x => x.json());
+      if (r.ok) {
+        await browseFolder(startPath);
+        return;
+      }
+      const drive = extractDrivePrefix(startPath);
+      if (drive) {
+        const rd = await fetch(`/api/browse_folder?path=${encodeURIComponent(drive)}`).then(x => x.json());
+        if (rd.ok) {
+          await browseFolder(drive);
+          return;
+        }
+      }
+    }
+    await browseFolder('__drives__');
+  } catch (e) {
+    await browseFolder('__drives__');
+  }
+});
+
+$('#btn-folder-pick-current').addEventListener('click', () => {
+  if (!currentBrowseDir) { toast('请先进入一个具体的盘符或文件夹', 'error'); return; }
+  pickArchiveCandidate(currentBrowseDir);
+});
+
+$('#btn-folder-new').addEventListener('click', () => {
+  if (!currentBrowseDir) { toast('请先进入目标盘符或目录', 'error'); return; }
+  const bar = $('#folder-create-bar');
+  bar.style.display = bar.style.display === 'none' ? 'flex' : 'none';
+  if (bar.style.display === 'flex') {
+    $('#folder-new-name').value = '';
+    $('#folder-new-name').focus();
+  }
+});
+$('#btn-folder-create-cancel').addEventListener('click', () => {
+  $('#folder-create-bar').style.display = 'none';
+});
+async function createSubfolderInBrowser() {
+  const name = $('#folder-new-name').value.trim();
+  if (!currentBrowseDir) { toast('请先选择上级目录', 'error'); return; }
+  if (!name) { toast('请输入新文件夹名称', 'error'); return; }
+  try {
+    const r = await fetch('/api/create_folder', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({parent: currentBrowseDir, name})
+    }).then(x => x.json());
+    if (!r?.ok) { toast('创建失败：' + (r?.error || '未知错误'), 'error'); return; }
+    $('#folder-create-bar').style.display = 'none';
+    toast('已创建子文件夹：' + name, 'success', 2000);
+    await browseFolder(r.path);
+  } catch (e) { toast('创建出错：' + e.message, 'error'); }
+}
+$('#btn-folder-create-confirm').addEventListener('click', () => void createSubfolderInBrowser());
+$('#folder-new-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); void createSubfolderInBrowser(); }
+});
+
+async function browseFolder(p) {
+  try {
+    const r = await fetch(`/api/browse_folder?path=${encodeURIComponent(p)}`).then(x => x.json());
+    if (!r.ok) { toast('读取目录失败：' + (r.error || ''), 'error'); return; }
+    currentBrowseDir = r.is_drives ? '' : (r.current || '');
+    $('#folder-current').textContent = (r.is_drives ? '💽 ' : '📁 ') + r.current;
+    $('#btn-folder-pick-current').disabled = !currentBrowseDir;
+    $('#btn-folder-new').disabled = !currentBrowseDir;
+    if (!currentBrowseDir) $('#folder-create-bar').style.display = 'none';
+    renderDriveButtons(r.drives || (r.is_drives ? r.entries : null), currentBrowseDir);
+    const list = $('#folder-list');
+    list.innerHTML = '';
+    if (!r.entries || r.entries.length === 0) {
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.style.color = 'var(--muted)';
+      div.innerHTML = '<span class="ico">·</span><span class="name">（此目录下暂无子文件夹，可直接点击上方「选定当前目录」或「新建子文件夹」）</span>';
+      list.appendChild(div);
+      return;
+    }
+    r.entries.forEach(en => {
+      const div = document.createElement('div');
+      div.className = 'item';
+      let ico = '📂';
+      if (en.is_drive || en.is_drive_root) ico = '💽';
+      else if (en.name === '..') ico = '⬆';
+      const canPick = !en.is_drive_root && en.name !== '..';
+      div.innerHTML = `
+        <span class="ico">${ico}</span>
+        <span class="name">${escape(en.name)}</span>
+        ${canPick ? '<button type="button" class="pick">选这里</button>' : ''}`;
+      if (canPick) {
+        div.querySelector('.pick').addEventListener('click', (e) => {
+          e.stopPropagation();
+          pickArchiveCandidate(en.path);
+        });
+      }
+      div.addEventListener('click', () => void browseFolder(en.path));
+      list.appendChild(div);
+    });
+  } catch (e) { toast('浏览出错：' + e.message, 'error'); }
+}
+void loadDrives();
+fetch('/api/progress').then(r => r.json()).then(r => {
+  if (r.ok && r.state.job_id) {
+    state.job_id = r.state.job_id;
+    $('#panel-progress').style.display = '';
+    renderProgress(r.state);
+    if (r.state.running) pollProgress();
+    else void loadFailures(r.state.job_id);
+  }
+}).catch(() => {});
+
+let authorHistoryJob = '';
+const history = {
+  all: {success: 0, failure: 0, request: 0},
+  author: {success: 0, failure: 0, request: 0}
+};
+
+function showAuthorHistory(inventory) {
+  const creator = inventory.creator || {};
+  const panel = $('#author-history');
+  authorHistoryJob = inventory.author_folder && creator.id ? inventory.job_id : '';
+  panel.hidden = !authorHistoryJob;
+  if (!authorHistoryJob) return;
+  const accountLabel = inventory.platform === 'douyin' ? '抖音号' : inventory.platform === 'weibo' ? '微博号' : '小红书号';
+  $('#author-name').textContent = creator.name || '作者';
+  $('#author-id').textContent = accountLabel + ' ' + (creator.account || '未读取到') + ' · ID ' + (creator.user_id || creator.id);
+  $('#author-bio').textContent = creator.bio || '';
+  $('#author-folder').textContent = inventory.archive_root + '\\' + inventory.author_folder.replaceAll('/', '\\');
+  const avatar = $('#author-avatar');
+  avatar.hidden = true;
+  avatar.removeAttribute('src');
+  avatar.onload = () => { avatar.hidden = false; };
+  avatar.onerror = () => { avatar.hidden = true; };
+  if (/^https?:\/\//i.test(creator.avatar || '')) {
+    const params = new URLSearchParams({platform: inventory.platform || '', url: creator.avatar});
+    if (creator.id) params.set('key', `${inventory.platform}:${creator.id}`);
+    avatar.src = '/api/author-avatar?' + params.toString();
+  }
+  history.author.success = 0;
+  history.author.failure = 0;
+  for (const column of panel.querySelectorAll('[data-history]')) {
+    column.querySelector('[data-total]').textContent = '…';
+    const list = column.querySelector('[data-items]');
+    delete list.dataset.rows;
+    list.replaceChildren();
+    for (const button of column.querySelectorAll('[data-page]')) button.disabled = true;
+  }
+  void loadDownloadHistory('author');
+}
+
+async function useHistoryItem(item, retry, allowLower = false, guestOnly = false) {
+  if (retry && (state.submitting || state.downloading)) return;
+  if (retry) {
+    state.submitting = true;
+    syncDownloadButtons();
+  }
+  try {
+    const endpoint = retry ? (item ? '/api/history-retry' : '/api/history-retry-all') : '/api/history-open';
+    const response = await fetchWithRetry(endpoint, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(item ? {platform: item.platform, work_id: item.work_id, allow_lower: allowLower, guest_only: guestOnly} : {})
+    }, retry ? {...DOWNLOAD_REQUEST, tries:3} : {tries:1});
+    const result = response.data;
+    if (!result?.ok) throw new Error(result?.error || '操作失败，请稍后重试。');
+    if (retry) {
+      $('#panel-progress').style.display = '';
+      renderProgress(result.state);
+      $('#panel-progress').scrollIntoView({behavior: 'smooth', block: 'start'});
+      pollProgress();
+    }
+  } catch (error) {
+    toast(error.message, 'error');
+  } finally {
+    if (retry) {
+      state.submitting = false;
+      syncDownloadButtons();
+    }
+  }
+}
+
+function historyItem(item, status) {
+  const row = document.createElement('li');
+  row.className = 'history-item';
+  const image = document.createElement('img');
+  image.className = 'history-thumb';
+  image.alt = '';
+  image.loading = 'lazy';
+  image.src = '/api/history-cover?' + new URLSearchParams({platform: item.platform, work_id: item.work_id, v: item.updated_at});
+  const copy = document.createElement('div');
+  copy.className = 'history-copy';
+  const title = document.createElement('strong');
+  title.textContent = item.title;
+  const meta = document.createElement('div');
+  meta.className = 'history-meta';
+  const time = Date.parse(item.updated_at);
+  meta.textContent = [PLATFORM_LABEL[item.platform] || item.platform,
+    Number.isNaN(time) ? '' : new Date(time).toLocaleString(),
+    String(item.quality || '').split(' · ').filter(label => label !== 'original_cdn')
+      .map(label => label === 'api_fallback' ? '备用图' : label).join(' · '),
+    item.error || item.folder].filter(Boolean).join(' · ');
+  const retry = status === 'failure';
+  const button = document.createElement('button');
+  button.className = 'ghost history-action';
+  button.textContent = retry ? '重下' : '浏览本地文件';
+  if (retry) {
+    button.dataset.historyRetry = '';
+    button.disabled = state.submitting || state.downloading;
+  }
+  button.addEventListener('click', () => void useHistoryItem(item, retry));
+  copy.append(title, meta, button);
+  if (item.quality?.includes('非最高画质')) meta.classList.add('quality-label');
+  if (retry && canLowerQuality(item.platform)) {
+    const lower = document.createElement('button');
+    lower.className = 'ghost history-action';
+    lower.textContent = '降一级画质下载';
+    lower.dataset.historyRetry = '';
+    lower.disabled = button.disabled;
+    lower.addEventListener('click', () => void useHistoryItem(item, true, true));
+    const guest = document.createElement('button');
+    guest.className = 'ghost history-action';
+    guest.textContent = '免登录重试';
+    guest.dataset.historyRetry = '';
+    guest.disabled = button.disabled;
+    guest.addEventListener('click', () => void useHistoryItem(item, true, false, true));
+    copy.append(lower, guest);
+  }
+  row.append(image, copy);
+  return row;
+}
+
+async function loadDownloadHistory(scope = 'all') {
+  const pageState = history[scope];
+  const job = scope === 'author' ? authorHistoryJob : '';
+  if (scope === 'author' && !job) return;
+  const request = ++pageState.request;
+  const panel = document.querySelector('[data-history-scope="' + scope + '"]');
+  const query = new URLSearchParams({success_offset: pageState.success, failure_offset: pageState.failure});
+  if (job) query.set('author_job', job);
+  try {
+    const r = (await fetchWithRetry('/api/history?' + query, {}, {tries:1, timeout:10000})).data;
+    if (!r?.ok || request !== pageState.request || (job && job !== authorHistoryJob)) return;
+    for (const status of ['success', 'failure']) {
+      const column = panel.querySelector('[data-history="' + status + '"]');
+      const page = r[status];
+      if (pageState[status] && !page.items.length) {
+        pageState[status] = Math.max(0, (Math.ceil(page.total / 24) - 1) * 24);
+        void loadDownloadHistory(scope);
+        return;
+      }
+      column.querySelector('[data-total]').textContent = page.total + ' 件';
+      if (scope === 'all' && status === 'failure') {
+        const retry = $('#btn-history-retry-all');
+        retry.dataset.total = page.total;
+        retry.disabled = !page.total || state.submitting || state.downloading;
+      }
+      column.querySelector('[data-page="-1"]').disabled = pageState[status] === 0;
+      column.querySelector('[data-page="1"]').disabled = !page.more;
+      const list = column.querySelector('[data-items]');
+      const rows = JSON.stringify(page.items);
+      if (list.dataset.rows === rows) continue;
+      list.dataset.rows = rows;
+      list.replaceChildren();
+      if (!page.items.length) {
+        const empty = document.createElement('li');
+        empty.className = 'history-meta';
+        empty.textContent = status === 'success' ? '暂无成功记录' : '暂无失败记录';
+        list.append(empty);
+      }
+      for (const item of page.items) list.append(historyItem(item, status));
+    }
+  } catch {}
+}
+for (const button of document.querySelectorAll('[data-page]')) {
+  button.addEventListener('click', () => {
+    const status = button.closest('[data-history]').dataset.history;
+    const scope = button.closest('[data-history-scope]').dataset.historyScope;
+    const pageState = history[scope];
+    pageState[status] = Math.max(0, pageState[status] + 24 * +button.dataset.page);
+    void loadDownloadHistory(scope);
+  });
+}
+$('#btn-history-retry-all').addEventListener('click', () => void useHistoryItem(null, true));
+void loadDownloadHistory();
+void updateFavorites();
+setInterval(() => {
+  void loadDownloadHistory();
+  if (authorHistoryJob) void loadDownloadHistory('author');
+}, 15000);
+
+// ----- 每次启动弹出免责声明（5 秒强制阅读倒计时） -----
+(() => {
+  const dialog = $('#disclaimer-dialog');
+  if (!dialog) {
+    disclaimerAccepted = true;
+    return;
+  }
+  const hintEl = $('#disclaimer-hint');
+  const confirmBtn = $('#btn-disclaimer-confirm');
+  const optionLabels = $$('#disclaimer-options .disclaimer-option');
+  const radios = $$('#disclaimer-options input[name="disclaimer-choice"]');
+  let remaining = 5;
+  let unlocked = false;
+
+  dialog.addEventListener('cancel', event => {
+    if (!disclaimerAccepted) event.preventDefault();
+  });
+  dialog.addEventListener('close', () => {
+    if (!disclaimerAccepted) {
+      queueMicrotask(() => {
+        if (!disclaimerAccepted && !dialog.open) dialog.showModal();
+      });
+    }
+  });
+  document.addEventListener('keydown', event => {
+    if (!disclaimerAccepted && event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }, true);
+
+  function syncConfirmButton() {
+    const chosen = radios.find(r => r.checked)?.value || '';
+    confirmBtn.disabled = !unlocked || !chosen;
+    if (unlocked) confirmBtn.textContent = '确认';
+  }
+
+  for (const radio of radios) {
+    radio.checked = false;
+    radio.disabled = true;
+    radio.addEventListener('change', syncConfirmButton);
+  }
+
+  function renderCountdown() {
+    if (remaining > 0) {
+      hintEl.textContent = `请仔细阅读免责声明，${remaining} 秒后方可勾选选项。`;
+      confirmBtn.textContent = `确认（${remaining}s）`;
+      confirmBtn.disabled = true;
+      return;
+    }
+    unlocked = true;
+    hintEl.textContent = '请勾选「我同意声明」或「不同意声明」，然后点击确认。';
+    for (const label of optionLabels) label.classList.remove('is-locked');
+    for (const radio of radios) radio.disabled = false;
+    confirmBtn.textContent = '确认';
+    syncConfirmButton();
+  }
+
+  confirmBtn.addEventListener('click', async () => {
+    if (!unlocked) return;
+    const choice = radios.find(r => r.checked)?.value;
+    if (!choice) return;
+    if (choice === 'agree') {
+      disclaimerAccepted = true;
+      dialog.close();
+      queueMicrotask(maybeCheckFavorites);
+      queueMicrotask(maybePromptFirstLaunchPath);
+      return;
+    }
+    confirmBtn.disabled = true;
+    for (const radio of radios) radio.disabled = true;
+    confirmBtn.textContent = '正在退出…';
+    hintEl.textContent = '您已选择不同意免责声明，正在关闭软件…';
+    try {
+      await fetch('/api/exit', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
+    } catch {}
+    try { window.close(); } catch {}
+  });
+
+  renderCountdown();
+  dialog.showModal();
+  const timer = setInterval(() => {
+    remaining -= 1;
+    renderCountdown();
+    if (remaining <= 0) clearInterval(timer);
+  }, 1000);
+})();
+</script>
+</body>
+</html>
